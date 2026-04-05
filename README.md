@@ -1,5 +1,7 @@
 # frost-threshold
 
+**[Live Demo →](https://systemslibrarian.github.io/frost-threshold/)**
+
 Threshold signatures in the browser with FROST (RFC 9591), using real Ed25519 cryptography compiled from Rust to WASM.
 
 No simulated primitives. No fake math. Live values only.
