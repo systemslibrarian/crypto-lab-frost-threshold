@@ -22,18 +22,18 @@ export const renderRound2Exhibit = (
 
   return `
     <section class="exhibit">
-      <h3>Exhibit 4 - Round 2 Signature Shares</h3>
+      <h3><span class="step-badge">4</span> Round 2 — Signature Shares</h3>
       <p>
-        Each participant computes a signature share using their secret share, their nonce pair, the message,
-        and the full commitment list. The binding factor - derived by hashing the message and all commitments
-        together - prevents mix-and-match attacks. Each share is a scalar value. None of them is a valid
-        signature.
+        Each signer now combines their secret piece, their dice roll, the message, and everyone's
+        promises to produce a partial signature. A tamper-proof lock ties the message to all the
+        promises so nobody can swap pieces around. Each partial signature is useless on its own.
+        <span class="muted">(Signature share via binding factor; prevents commitment reordering attacks)</span>
       </p>
 
       <button id="run-round2" ${busy ? 'disabled' : ''}>Run Round 2</button>
       ${error ? `<p class="error">${escapeHtml(error)}</p>` : ''}
 
-      <div class="card-grid">${rows}</div>
+      <div class="card-grid" role="region" aria-label="Round 2 signature shares">${rows}</div>
     </section>
   `;
 };

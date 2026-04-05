@@ -79,14 +79,21 @@ const render = (): void => {
   const latest = history.length >= 1 ? history[history.length - 1] : undefined;
 
   app.innerHTML = `
-    <main class="shell">
+    <main class="shell" id="main-content" role="main">
       <header class="hero">
-        <p class="eyebrow">systemslibrarian crypto-lab</p>
-        <h1>frost-threshold</h1>
+        <p class="eyebrow">systemslibrarian &middot; crypto-lab</p>
+        <h1>frost&#8209;threshold</h1>
         <p>
-          FROST RFC 9591 threshold signatures with real Rust/WASM cryptography.
-          No simulated math. Every value below is live.
+          <strong style="color:#c7d2fe">FROST RFC 9591</strong> — a way for a group to share one signing key
+          so that any minimum subset can sign, but no individual can. Built with real
+          Rust cryptography compiled to your browser. Every value below is live.
         </p>
+        <div class="hero-chips">
+          <span class="chip">Ed25519</span>
+          <span class="chip">Schnorr</span>
+          <span class="chip">t-of-n</span>
+          <span class="chip">WASM</span>
+        </div>
       </header>
 
       ${renderKeygenExhibit(state.value, keygenBusy, keygenError)}

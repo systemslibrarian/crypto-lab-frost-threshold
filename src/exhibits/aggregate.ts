@@ -10,17 +10,18 @@ export const renderAggregateExhibit = (
 ): string => {
   const status = session.finalSignature
     ? session.verified
-      ? '<p class="verified">Valid Ed25519 Schnorr Signature</p>'
-      : '<p class="error">Aggregation completed but verification failed</p>'
+      ? '<p class="verified" role="status">Valid Ed25519 Schnorr Signature</p>'
+      : '<p class="error" role="alert">Aggregation completed but verification failed</p>'
     : '<p class="muted">No aggregated signature yet.</p>';
 
   return `
     <section class="exhibit">
-      <h3>Exhibit 5 - Aggregation and Verification</h3>
+      <h3><span class="step-badge">5</span> Aggregation & Verification</h3>
       <p>
-        The aggregator combines t signature shares using Lagrange interpolation over the Ed25519 scalar field.
-        The result is a standard 64-byte Ed25519 Schnorr signature. Any Ed25519 verifier - unaware that FROST
-        was used - will accept it. The threshold structure is invisible to the outside world.
+        The partial signatures are mathematically stitched back together into one final signature.
+        The result looks exactly like a normal single-person signature — nobody can tell a group
+        was involved. Any standard verifier will accept it.
+        <span class="muted">(Lagrange interpolation → standard 64-byte Ed25519 Schnorr signature)</span>
       </p>
 
       ${renderFailureToggle(simulateFailure)}
@@ -31,7 +32,7 @@ export const renderAggregateExhibit = (
       ${
         session.finalSignature
           ? `<p class="mono">${escapeHtml(session.finalSignature)} <span class="muted">(${bytesLabel(session.finalSignature)})</span></p>
-             <p class="muted">This signature is indistinguishable from a single-party Ed25519 signature. Standard verifiers need no knowledge of the threshold structure.</p>`
+             <p class="muted">This signature looks identical to one made by a single signer. No verifier can tell a group was involved.</p>`
           : ''
       }
     </section>

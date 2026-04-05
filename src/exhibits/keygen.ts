@@ -30,23 +30,23 @@ export const renderKeygenExhibit = (
 
   return `
     <section class="exhibit">
-      <h3>Exhibit 1 - Key Generation</h3>
+      <h3><span class="step-badge">1</span> Key Generation</h3>
       <p>
-        The dealer generates a group keypair and splits the signing key using Verifiable Secret Sharing
-        over the Ed25519 scalar field. Each participant receives one share. No single share is sufficient
-        to sign. The group public key is a standard Ed25519 point - verifiers need no knowledge of the
-        threshold structure.
+        A trusted setup splits one master signing key into pieces — like tearing a treasure map
+        into fragments. Each participant gets one piece. No single piece can sign anything on its own.
+        The group's public identity (Ed25519 public key) looks completely normal to the outside world.
+        <span class="muted">(Verifiable Secret Sharing over the Ed25519 scalar field)</span>
       </p>
 
       <div class="grid-2">
         <label>
           Participants (n): <span id="n-value">${session.config.numParticipants}</span>
-          <input id="n-slider" type="range" min="2" max="7" value="${session.config.numParticipants}" />
+          <input id="n-slider" type="range" min="2" max="7" value="${session.config.numParticipants}" aria-label="Number of participants" />
         </label>
 
         <label>
           Threshold (t): <span id="t-value">${session.config.threshold}</span>
-          <input id="t-slider" type="range" min="2" max="${session.config.numParticipants}" value="${session.config.threshold}" />
+          <input id="t-slider" type="range" min="2" max="${session.config.numParticipants}" value="${session.config.threshold}" aria-label="Signing threshold" />
         </label>
       </div>
 
@@ -59,7 +59,7 @@ export const renderKeygenExhibit = (
           : ''
       }
 
-      <div class="card-grid">${sharesHtml}</div>
+      <div class="card-grid" role="region" aria-label="Generated key shares">${sharesHtml}</div>
     </section>
   `;
 };

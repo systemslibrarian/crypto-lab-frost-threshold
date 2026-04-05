@@ -9,6 +9,8 @@ export const renderSubsetExhibit = (session: FrostSession): string => {
         <button
           class="participant ${selected ? 'selected' : 'dimmed'}"
           data-participant-id="${share.identifier}"
+          aria-pressed="${selected}"
+          aria-label="Signer ${idx + 1} — ${selected ? 'selected' : 'not selected'}"
           ${session.shares.length === 0 ? 'disabled' : ''}
         >
           <span>Signer ${idx + 1}</span>
@@ -23,11 +25,12 @@ export const renderSubsetExhibit = (session: FrostSession): string => {
 
   return `
     <section class="exhibit">
-      <h3>Exhibit 2 - Participant Selection</h3>
+      <h3><span class="step-badge">2</span> Participant Selection</h3>
       <p>
-        Any t of the n participants may sign. The selection is arbitrary - FROST does not require specific
-        participants. This is the non-obvious property: it is not "the first three" or "designated signers" -
-        any valid subset works.
+        Pick any group of signers that meets the minimum count — it doesn't matter which ones.
+        There are no "designated signers" or special roles. Any combination that reaches the
+        threshold can produce a valid signature.
+        <span class="muted">(t-of-n threshold selection)</span>
       </p>
 
       <p>
@@ -65,11 +68,12 @@ export const renderAnySubsetExhibit = (
 
   return `
     <section class="exhibit">
-      <h3>Exhibit 6 - Any Subset Works</h3>
+      <h3><span class="step-badge">6</span> Any Subset Works</h3>
       <p>
-        Different subsets of t participants produce different signature bytes - because the nonces and binding
-        factors differ - but all of them verify against the same group public key. The signing key was never
-        reconstructed. It exists only implicitly in the mathematics of the shares.
+        Different groups of signers produce different-looking signatures — but every one of them
+        passes verification against the same public key. The master signing key was never put back
+        together. It only exists as a mathematical ghost spread across the shares.
+        <span class="muted">(Distinct nonces/binding factors → distinct bytes, same verification)</span>
       </p>
 
       <button id="retry-subset" ${canRetry ? '' : 'disabled'}>Try a different subset</button>

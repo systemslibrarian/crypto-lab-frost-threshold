@@ -30,24 +30,24 @@ export const renderRound1Exhibit = (
 
   return `
     <section class="exhibit">
-      <h3>Exhibit 3 - Round 1 Commitments</h3>
+      <h3><span class="step-badge">3</span> Round 1 — Commitments</h3>
       <p>
-        Each participant generates a fresh nonce pair using a cryptographically secure random number
-        generator. The nonces are kept secret. The commitments - elliptic curve points - are published to
-        all other participants. Nonce reuse would allow private key recovery: each nonce must be used exactly
-        once and then destroyed.
+        Each signer rolls secret random dice and then shares only a sealed promise of the result.
+        The secrets stay hidden; only the promises are published. These single-use values are
+        critical — reusing them would leak the private key.
+        <span class="muted">(Nonce generation + elliptic-curve commitments; CSPRNG-backed)</span>
       </p>
 
       <label>
         Message (plain text)
-        <input id="message-input" type="text" value="${escapeHtml(messageText)}" placeholder="hello FROST" />
+        <input id="message-input" type="text" value="${escapeHtml(messageText)}" placeholder="hello FROST" aria-label="Message to sign" />
       </label>
       <p class="mono muted">Message hex: ${session.message || '(empty)'}</p>
 
       <button id="run-round1" ${busy || selected.length === 0 ? 'disabled' : ''}>Run Round 1</button>
       ${error ? `<p class="error">${escapeHtml(error)}</p>` : ''}
 
-      <div class="card-grid">${commitments}</div>
+      <div class="card-grid" role="region" aria-label="Round 1 commitments">${commitments}</div>
     </section>
   `;
 };

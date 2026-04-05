@@ -4,6 +4,16 @@ Threshold signatures in the browser with FROST (RFC 9591), using real Ed25519 cr
 
 No simulated primitives. No fake math. Live values only.
 
+## The Problem
+
+Imagine a team controls a shared account — a company wallet, a code-signing certificate, a server's identity key. If one person holds the private key, they become a single point of failure: they can go rogue, get hacked, or lose the key. If you copy the key to everyone, you've multiplied the attack surface.
+
+What you really want is: **no single person can sign, but any minimum group can** — without ever putting the full key in one place.
+
+That's what FROST solves. It splits a signing key into pieces so that, say, any 3 out of 5 keyholders can produce a valid signature together. The signature looks completely normal to the outside world — nobody can tell a group was involved. And the full private key is never reassembled at any point in the process.
+
+This project is a hands-on, interactive demo of that protocol running entirely in your browser.
+
 ## What This Is
 `frost-threshold` is part of the **systemslibrarian crypto-lab collection** and demonstrates:
 - trusted dealer key generation for t-of-n signing
