@@ -1,0 +1,16 @@
+[package]
+name = "frost-threshold-wasm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+frost-ed25519 = "2"
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+getrandom = { version = "0.2", features = ["js"] }
+zeroize = "1"
+hex = "0.4"
