@@ -1,6 +1,6 @@
-# frost-threshold
+# crypto-lab-frost-threshold
 
-**[Live Demo →](https://systemslibrarian.github.io/frost-threshold/)**
+**[Live Demo →](https://systemslibrarian.github.io/crypto-lab-frost-threshold/)**
 
 Threshold signatures in the browser with FROST (RFC 9591), using real Ed25519 cryptography compiled from Rust to WASM.
 
@@ -17,7 +17,7 @@ That's what FROST solves. It splits a signing key into pieces so that, say, any 
 This project is a hands-on, interactive demo of that protocol running entirely in your browser.
 
 ## What This Is
-`frost-threshold` is part of the **systemslibrarian crypto-lab collection** and demonstrates:
+`crypto-lab-frost-threshold` is part of the **systemslibrarian crypto-lab collection** and demonstrates:
 - trusted dealer key generation for t-of-n signing
 - two-round FROST signing (nonce commitments, then signature shares)
 - aggregation into a standard Ed25519 signature
