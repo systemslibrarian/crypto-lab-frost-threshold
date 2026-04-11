@@ -12,6 +12,8 @@ if (!app) {
   throw new Error('Missing #app element');
 }
 
+type ThemeMode = 'dark' | 'light';
+
 type KeygenResult = {
   group_public_key: string;
   shares: Array<{
@@ -44,6 +46,19 @@ type AggregateResult = {
 
 const state = new FrostStateManager();
 
+const getThemeMode = (): ThemeMode =>
+  document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+
+const setThemeMode = (theme: ThemeMode): void => {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+};
+
+const getThemeToggleMeta = (theme: ThemeMode): { icon: string; ariaLabel: string } =>
+  theme === 'dark'
+    ? { icon: '🌙', ariaLabel: 'Switch to light mode' }
+    : { icon: '☀️', ariaLabel: 'Switch to dark mode' };
+
 let messageText = 'Hello from FROST';
 let keygenBusy = false;
 let round1Busy = false;
@@ -74,6 +89,8 @@ const getRound1For = (identifier: string) => {
 };
 
 const render = (): void => {
+  const themeMode = getThemeMode();
+  const toggleMeta = getThemeToggleMeta(themeMode);
   const history = state.signatureHistory;
   const previous = history.length >= 2 ? history[0] : undefined;
   const latest = history.length >= 1 ? history[history.length - 1] : undefined;
@@ -81,6 +98,13 @@ const render = (): void => {
   app.innerHTML = `
     <main class="shell" id="main-content" role="main">
       <header class="hero">
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          type="button"
+          aria-label="${toggleMeta.ariaLabel}"
+          title="${toggleMeta.ariaLabel}"
+        >${toggleMeta.icon}</button>
         <p class="eyebrow">systemslibrarian &middot; crypto-lab</p>
         <h1>frost&#8209;threshold</h1>
         <p>
@@ -109,6 +133,13 @@ const render = (): void => {
 };
 
 const bindEvents = (): void => {
+  const themeToggle = document.querySelector<HTMLButtonElement>('#theme-toggle');
+  themeToggle?.addEventListener('click', () => {
+    const nextTheme: ThemeMode = getThemeMode() === 'dark' ? 'light' : 'dark';
+    setThemeMode(nextTheme);
+    render();
+  });
+
   const nSlider = document.querySelector<HTMLInputElement>('#n-slider');
   const tSlider = document.querySelector<HTMLInputElement>('#t-slider');
   const nValue = document.querySelector<HTMLSpanElement>('#n-value');

@@ -66,6 +66,36 @@ body {
 	animation: rise 600ms ease both;
 }
 
+.theme-toggle {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	width: 2.6rem;
+	height: 2.6rem;
+	border-radius: 50%;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.1rem;
+	border: 1px solid var(--line);
+	background: var(--surface-1);
+	color: var(--ink);
+	box-shadow: none;
+	z-index: 2;
+}
+
+.theme-toggle:hover:not(:disabled) {
+	background: var(--surface-2);
+	transform: translateY(0);
+	box-shadow: none;
+}
+
+html[data-theme='dark'] .theme-toggle {
+	color: var(--paper);
+	background: var(--surface-2);
+}
+
 .hero::before {
 	content: '';
 	position: absolute;
@@ -411,6 +441,55 @@ details summary:hover {
 .exhibit:nth-child(4) { animation-delay: 180ms; }
 .exhibit:nth-child(5) { animation-delay: 240ms; }
 .exhibit:nth-child(6) { animation-delay: 300ms; }
+
+html[data-theme='light'] body {
+	background: var(--paper);
+	background-image: none;
+	color: var(--ink);
+}
+
+html[data-theme='light'] .hero {
+	background: var(--card);
+	border-color: var(--line);
+	box-shadow: 0 12px 28px var(--brand-glow);
+}
+
+html[data-theme='light'] h1 {
+	background: none;
+	-webkit-text-fill-color: currentColor;
+	color: var(--ink);
+}
+
+html[data-theme='light'] .hero p,
+html[data-theme='light'] .exhibit > p,
+html[data-theme='light'] .exhibit li,
+html[data-theme='light'] label,
+html[data-theme='light'] .card p,
+html[data-theme='light'] .muted,
+html[data-theme='light'] .toggle {
+	color: var(--muted);
+}
+
+html[data-theme='light'] .chip,
+html[data-theme='light'] .mono,
+html[data-theme='light'] details summary {
+	color: var(--brand);
+}
+
+html[data-theme='light'] .exhibit,
+html[data-theme='light'] .card,
+html[data-theme='light'] .participant {
+	background: var(--card);
+	border-color: var(--line);
+	box-shadow: none;
+	color: var(--ink);
+}
+
+html[data-theme='light'] input[type='text'] {
+	background: var(--card);
+	border-color: var(--line);
+	color: var(--ink);
+}
 .exhibit:nth-child(7) { animation-delay: 360ms; }
 
 /* --- Scrollbar --- */
