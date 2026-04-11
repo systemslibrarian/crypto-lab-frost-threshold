@@ -91,6 +91,10 @@ body {
 	box-shadow: none;
 }
 
+.theme-toggle::after {
+	display: none;
+}
+
 html[data-theme='dark'] .theme-toggle {
 	color: var(--paper);
 	background: var(--surface-2);
@@ -441,7 +445,9 @@ details summary:hover {
 .exhibit:nth-child(4) { animation-delay: 180ms; }
 .exhibit:nth-child(5) { animation-delay: 240ms; }
 .exhibit:nth-child(6) { animation-delay: 300ms; }
+.exhibit:nth-child(7) { animation-delay: 360ms; }
 
+/* --- Light theme overrides --- */
 html[data-theme='light'] body {
 	background: var(--paper);
 	background-image: none;
@@ -457,6 +463,13 @@ html[data-theme='light'] .hero {
 html[data-theme='light'] h1 {
 	background: none;
 	-webkit-text-fill-color: currentColor;
+	color: var(--ink);
+}
+
+html[data-theme='light'] h3,
+html[data-theme='light'] h4,
+html[data-theme='light'] .card strong,
+html[data-theme='light'] .eyebrow {
 	color: var(--ink);
 }
 
@@ -490,7 +503,6 @@ html[data-theme='light'] input[type='text'] {
 	border-color: var(--line);
 	color: var(--ink);
 }
-.exhibit:nth-child(7) { animation-delay: 360ms; }
 
 /* --- Scrollbar --- */
 ::-webkit-scrollbar {

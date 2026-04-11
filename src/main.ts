@@ -108,7 +108,7 @@ const render = (): void => {
         <p class="eyebrow">systemslibrarian &middot; crypto-lab</p>
         <h1>frost&#8209;threshold</h1>
         <p>
-          <strong style="color:#c7d2fe">FROST RFC 9591</strong> — a way for a group to share one signing key
+          <strong style="color:var(--brand-soft)">FROST RFC 9591</strong> — a way for a group to share one signing key
           so that any minimum subset can sign, but no individual can. Built with real
           Rust cryptography compiled to your browser. Every value below is live.
         </p>
