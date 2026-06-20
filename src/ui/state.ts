@@ -127,6 +127,18 @@ export class FrostStateManager {
       throw new Error('cannot select more than threshold participants');
     }
     this.session.selectedParticipants = next;
+
+    // Changing the signing set invalidates any signing already in progress. Round 1
+    // nonces are generated for one specific attempt; reusing them with a different
+    // signer set would be nonce reuse (the catastrophe this demo teaches). Drop all
+    // in-progress signing artifacts so a fresh Round 1 is required. (No-op on the
+    // normal path, where the set is chosen before Round 1 runs.)
+    if (Object.keys(this.session.round1Output).length > 0 || this.session.finalSignature !== null) {
+      this.session.round1Output = {};
+      this.session.signatureShares = {};
+      this.session.finalSignature = null;
+      this.session.verified = false;
+    }
   }
 
   setMessageFromText(text: string): void {
@@ -144,12 +156,13 @@ export class FrostStateManager {
   }
 
   requireRound1Complete(): void {
-    const required = this.session.selectedParticipants.length;
-    const current = Object.keys(this.session.round1Output).length;
-    if (required === 0) {
+    const selected = this.session.selectedParticipants;
+    if (selected.length === 0) {
       throw new Error('no participants selected');
     }
-    if (current !== required) {
+    // Membership, not count: every selected signer must have a Round 1 output.
+    // (A count check could pass with a stale entry for a now-deselected signer.)
+    if (!selected.every((id) => this.session.round1Output[id] !== undefined)) {
       throw new Error('round1 must be completed for all selected participants before round2');
     }
   }
@@ -162,9 +175,13 @@ export class FrostStateManager {
   }
 
   requireEnoughSharesForAggregation(): void {
-    const count = Object.keys(this.session.signatureShares).length;
-    if (count < this.session.config.threshold) {
-      throw new Error('aggregation requires at least threshold signature shares');
+    const selected = this.session.selectedParticipants;
+    if (selected.length < this.session.config.threshold) {
+      throw new Error('aggregation requires at least threshold selected signers');
+    }
+    // Membership, not count: every selected signer must have produced a share.
+    if (!selected.every((id) => this.session.signatureShares[id] !== undefined)) {
+      throw new Error('aggregation requires a signature share from every selected signer');
     }
   }
 
