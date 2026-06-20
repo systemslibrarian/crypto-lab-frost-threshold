@@ -4,3 +4,4 @@ pkg/
 .notes/
 crate/target/
 *.tsbuildinfo
+scripts/shot-*.png

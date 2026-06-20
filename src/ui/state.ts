@@ -2,6 +2,8 @@ export interface ParticipantShare {
   identifier: string;
   secret: string;
   commitment: string[];
+  /** Public verifying share from keygen. Safe to share; used for aggregation. */
+  verifyingShare: string;
 }
 
 export interface Round1ParticipantOutput {
@@ -63,6 +65,29 @@ export class FrostStateManager {
 
   resetSigningButKeepKeys(): void {
     this.session.selectedParticipants = [];
+    this.session.round1Output = {};
+    this.session.signatureShares = {};
+    this.session.finalSignature = null;
+    this.session.verified = false;
+  }
+
+  /**
+   * Invalidate everything downstream of key generation, keeping the new config.
+   * Used when the n/t sliders change after keys already exist — the old shares no
+   * longer match the chosen parameters, so they must be regenerated.
+   */
+  resetKeysAndSigning(): void {
+    this.session.groupPublicKey = '';
+    this.session.shares = [];
+    this.resetSigningButKeepKeys();
+  }
+
+  /**
+   * Invalidate the signing rounds but keep keys AND the selected signers. Used when
+   * the message changes: Round 1 nonces are bound to a single signing attempt, so
+   * reusing them for a new message would be nonce reuse — they must be regenerated.
+   */
+  resetRoundsKeepSelection(): void {
     this.session.round1Output = {};
     this.session.signatureShares = {};
     this.session.finalSignature = null;

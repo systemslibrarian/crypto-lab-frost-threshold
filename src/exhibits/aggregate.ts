@@ -1,4 +1,4 @@
-import { bytesLabel, escapeHtml } from '../ui/display';
+import { bytesLabel, escapeHtml, insight } from '../ui/display';
 import { renderFailureToggle } from './failure';
 import type { FrostSession } from '../ui/state';
 
@@ -16,7 +16,7 @@ export const renderAggregateExhibit = (
 
   return `
     <section class="exhibit">
-      <h3><span class="step-badge">5</span> Aggregation & Verification</h3>
+      <h2><span class="step-badge">5</span> Aggregation & Verification</h2>
       <p>
         The partial signatures are mathematically stitched back together into one final signature.
         The result looks exactly like a normal single-person signature — nobody can tell a group
@@ -24,9 +24,13 @@ export const renderAggregateExhibit = (
         <span class="muted">(Lagrange interpolation → standard 64-byte Ed25519 Schnorr signature)</span>
       </p>
 
+      ${insight(
+        `<strong>Watch what the aggregator receives:</strong> the signature shares, the public commitments, and each signer's <em>public verifying share</em> — and nothing else. No secret signing share is ever sent here. The group's private key is reconstructed <em>nowhere</em>; aggregation interpolates the signature directly. That is the whole point of FROST, and this demo's code enforces it.`
+      )}
+
       ${renderFailureToggle(simulateFailure)}
       <button id="run-aggregate" ${busy ? 'disabled' : ''}>Aggregate</button>
-      ${error ? `<p class="error">${escapeHtml(error)}</p>` : ''}
+      ${error ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : ''}
       ${status}
 
       ${

@@ -9,12 +9,15 @@
     "deploy": "npm run build && gh-pages -d dist",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "wasm": "PATH=$HOME/.cargo/bin:$PATH wasm-pack build crate --target web --out-dir ../pkg"
+    "wasm": "PATH=$HOME/.cargo/bin:$PATH wasm-pack build crate --target web --out-dir ../pkg",
+    "verify:a11y": "vite preview --port 4400 --strictPort & VP=$!; for i in $(seq 1 20); do curl -sf http://localhost:4400/crypto-lab-frost-threshold/ >/dev/null && break; sleep 1; done; BASE_URL=http://localhost:4400/crypto-lab-frost-threshold/ node scripts/a11y-check.mjs; R=$?; kill $VP; exit $R"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
     "autoprefixer": "^10.4.21",
+    "axe-core": "^4.12.1",
     "gh-pages": "^6.3.0",
+    "playwright": "^1.61.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.13",
     "typescript": "~5.8.3",

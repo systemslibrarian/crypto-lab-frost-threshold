@@ -1,5 +1,5 @@
 use frost_ed25519::{
-	keys::{self, SecretShare},
+	keys::{self, SecretShare, VerifyingShare},
 	rand_core::{CryptoRng, RngCore},
 };
 use serde::Serialize;
@@ -40,6 +40,10 @@ pub struct KeygenShare {
 	pub identifier: String,
 	pub secret: String,
 	pub commitment: Vec<String>,
+	/// Public verifying share for this participant, taken from the dealer's
+	/// `PublicKeyPackage`. This is what aggregation/verification consumes — the
+	/// secret `signing_share` never needs to leave the participant.
+	pub verifying_share: String,
 }
 
 #[derive(Clone, Serialize)]
@@ -48,7 +52,10 @@ pub struct KeygenOutput {
 	pub shares: Vec<KeygenShare>,
 }
 
-fn share_to_json(mut secret_share: SecretShare) -> Result<KeygenShare, String> {
+fn share_to_json(
+	mut secret_share: SecretShare,
+	verifying_share: &VerifyingShare,
+) -> Result<KeygenShare, String> {
 	let identifier = hex::encode(secret_share.identifier().serialize());
 
 	let mut secret_bytes = secret_share.signing_share().serialize();
@@ -62,6 +69,12 @@ fn share_to_json(mut secret_share: SecretShare) -> Result<KeygenShare, String> {
 		.map(hex::encode)
 		.collect::<Vec<_>>();
 
+	let verifying_share = hex::encode(
+		verifying_share
+			.serialize()
+			.map_err(|e| format!("failed to serialize verifying share: {e}"))?,
+	);
+
 	secret_bytes.zeroize();
 	secret_share.zeroize();
 
@@ -69,6 +82,7 @@ fn share_to_json(mut secret_share: SecretShare) -> Result<KeygenShare, String> {
 		identifier,
 		secret,
 		commitment,
+		verifying_share,
 	})
 }
 
@@ -98,9 +112,13 @@ pub fn frost_keygen_impl(threshold: u16, num_participants: u16) -> Result<Keygen
 		.map_err(|e| format!("failed to serialize verifying key: {e}"))?;
 	let group_public_key = hex::encode(&group_public_key_bytes);
 
+	let verifying_shares = pubkey_package.verifying_shares();
 	let mut out_shares = Vec::with_capacity(shares.len());
-	for (_, secret_share) in shares {
-		out_shares.push(share_to_json(secret_share)?);
+	for (identifier, secret_share) in shares {
+		let verifying_share = verifying_shares
+			.get(&identifier)
+			.ok_or_else(|| "missing verifying share for participant".to_string())?;
+		out_shares.push(share_to_json(secret_share, verifying_share)?);
 	}
 
 	group_public_key_bytes.zeroize();
@@ -123,6 +141,7 @@ mod tests {
 		for s in out.shares {
 			assert_eq!(s.identifier.len(), 64);
 			assert_eq!(s.secret.len(), 64);
+			assert_eq!(s.verifying_share.len(), 64);
 			assert_eq!(s.commitment.len(), 3);
 			for c in s.commitment {
 				assert_eq!(c.len(), 64);

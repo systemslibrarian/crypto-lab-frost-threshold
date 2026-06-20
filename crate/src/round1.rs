@@ -50,15 +50,21 @@ fn decode_hex(label: &str, value: &str) -> Result<Vec<u8>, String> {
 	hex::decode(value).map_err(|e| format!("invalid {label} hex: {e}"))
 }
 
-pub fn frost_round1_commit_impl(identifier_hex: &str) -> Result<Round1Output, String> {
+pub fn frost_round1_commit_impl(
+	identifier_hex: &str,
+	signing_share_hex: &str,
+) -> Result<Round1Output, String> {
 	let identifier_bytes = decode_hex("identifier", identifier_hex)?;
 	let identifier = Identifier::deserialize(&identifier_bytes)
 		.map_err(|e| format!("invalid identifier: {e}"))?;
 
-	// In production each participant should use its real signing share here; this API only
-	// receives an identifier, so we derive a deterministic non-zero scalar from it as a hedge input.
-	let nonce_secret = keys::SigningShare::deserialize(&identifier.serialize())
-		.map_err(|e| format!("failed to derive nonce secret from identifier: {e}"))?;
+	// Faithful to RFC 9591: the participant hedges nonce generation with its own secret
+	// signing share. The share is the real key material this participant holds — it is used
+	// locally only and is never transmitted as part of the Round 1 commitment.
+	let mut signing_share_bytes = decode_hex("signing share scalar", signing_share_hex)?;
+	let nonce_secret = keys::SigningShare::deserialize(&signing_share_bytes)
+		.map_err(|e| format!("invalid signing share scalar: {e}"))?;
+	signing_share_bytes.zeroize();
 
 	// Nonce reuse is catastrophic: reusing signing nonces across messages can leak the long-lived key share.
 	let mut rng = JsRng;
@@ -103,14 +109,10 @@ mod tests {
 
 	#[test]
 	fn round1_outputs_distinct_commitments() {
-		let out1 = frost_round1_commit_impl(
-			"0100000000000000000000000000000000000000000000000000000000000000",
-		)
-		.expect("round1 must succeed");
-		let out2 = frost_round1_commit_impl(
-			"0100000000000000000000000000000000000000000000000000000000000000",
-		)
-		.expect("round1 must succeed");
+		let id = "0100000000000000000000000000000000000000000000000000000000000000";
+		let share = "0200000000000000000000000000000000000000000000000000000000000000";
+		let out1 = frost_round1_commit_impl(id, share).expect("round1 must succeed");
+		let out2 = frost_round1_commit_impl(id, share).expect("round1 must succeed");
 
 		assert_eq!(out1.hiding_commitment.len(), 64);
 		assert_eq!(out1.binding_commitment.len(), 64);

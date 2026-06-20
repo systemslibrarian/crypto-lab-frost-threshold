@@ -4,6 +4,8 @@ import { renderKeygenExhibit } from './exhibits/keygen';
 import { renderRound1Exhibit } from './exhibits/round1';
 import { renderRound2Exhibit } from './exhibits/round2';
 import { renderAnySubsetExhibit, renderSubsetExhibit } from './exhibits/subset';
+import { renderProgress } from './exhibits/progress';
+import { renderRecap } from './exhibits/recap';
 import { FrostStateManager, type ParticipantShare } from './ui/state';
 import { wasmAggregate, wasmKeygen, wasmRound1Commit, wasmRound2Sign } from './wasm';
 
@@ -20,6 +22,7 @@ type KeygenResult = {
     identifier: string;
     secret: string;
     commitment: string[];
+    verifying_share: string;
   }>;
 };
 
@@ -77,7 +80,8 @@ const toParticipantShares = (shares: KeygenResult['shares']): ParticipantShare[]
   shares.map((s) => ({
     identifier: s.identifier,
     secret: s.secret,
-    commitment: s.commitment
+    commitment: s.commitment,
+    verifyingShare: s.verifying_share
   }));
 
 const getRound1For = (identifier: string) => {
@@ -89,6 +93,15 @@ const getRound1For = (identifier: string) => {
 };
 
 const render = (): void => {
+  // Preserve keyboard focus (and text caret) across full re-renders. Without this,
+  // every action would reset focus to <body>, breaking keyboard/screen-reader flow.
+  const active = document.activeElement as HTMLElement | null;
+  const focusId = active && active.id ? active.id : null;
+  let caret: { start: number; end: number } | null = null;
+  if (active instanceof HTMLInputElement && active.type === 'text' && active.selectionStart !== null) {
+    caret = { start: active.selectionStart, end: active.selectionEnd ?? active.selectionStart };
+  }
+
   const themeMode = getThemeMode();
   const toggleMeta = getThemeToggleMeta(themeMode);
   const history = state.signatureHistory;
@@ -96,7 +109,7 @@ const render = (): void => {
   const latest = history.length >= 1 ? history[history.length - 1] : undefined;
 
   app.innerHTML = `
-    <main class="shell" id="main-content" role="main">
+    <main class="shell" id="main-content">
       <header class="hero">
         <button
           id="theme-toggle"
@@ -120,16 +133,32 @@ const render = (): void => {
         </div>
       </header>
 
+      ${renderProgress(state.value)}
       ${renderKeygenExhibit(state.value, keygenBusy, keygenError)}
       ${renderSubsetExhibit(state.value)}
       ${renderRound1Exhibit(state.value, messageText, round1Busy, round1Error)}
       ${renderRound2Exhibit(state.value, round2Busy, round2Error)}
       ${renderAggregateExhibit(state.value, simulateFailure, aggregateBusy, aggregateError)}
       ${renderAnySubsetExhibit(previous, latest, state.value.finalSignature !== null)}
+      ${renderRecap(state.value)}
     </main>
   `;
 
   bindEvents();
+
+  if (focusId) {
+    const restored = document.getElementById(focusId);
+    if (restored && !(restored as HTMLButtonElement).disabled) {
+      restored.focus();
+      if (caret && restored instanceof HTMLInputElement && restored.type === 'text') {
+        try {
+          restored.setSelectionRange(caret.start, caret.end);
+        } catch {
+          /* setSelectionRange can throw on some input states; safe to ignore */
+        }
+      }
+    }
+  }
 };
 
 const bindEvents = (): void => {
@@ -162,6 +191,21 @@ const bindEvents = (): void => {
       state.setConfig(state.value.config.numParticipants, t);
       tValue.textContent = String(t);
     });
+
+    // On release (not every drag tick), if keys were already generated they no longer
+    // match the chosen n/t — discard them so the UI cleanly returns to "generate keys".
+    const invalidateStaleKeys = (): void => {
+      if (state.value.groupPublicKey !== '') {
+        state.resetKeysAndSigning();
+        keygenError = null;
+        round1Error = null;
+        round2Error = null;
+        aggregateError = null;
+        render();
+      }
+    };
+    nSlider.addEventListener('change', invalidateStaleKeys);
+    tSlider.addEventListener('change', invalidateStaleKeys);
   }
 
   const keygenBtn = document.querySelector<HTMLButtonElement>('#generate-keys');
@@ -204,7 +248,28 @@ const bindEvents = (): void => {
   messageInput?.addEventListener('input', () => {
     messageText = messageInput.value;
     state.setMessageFromText(messageText);
-    render();
+
+    // If signing already started, the message change invalidates it: the Round 1
+    // nonces are bound to one signing attempt, so they must be regenerated for the
+    // new message (reusing them would be nonce reuse). Re-render to reflect that;
+    // focus + caret are preserved by render(), so typing is not interrupted.
+    const hasSigningProgress =
+      Object.keys(state.value.round1Output).length > 0 || state.value.finalSignature !== null;
+    if (hasSigningProgress) {
+      state.resetRoundsKeepSelection();
+      round1Error = null;
+      round2Error = null;
+      aggregateError = null;
+      render();
+      return;
+    }
+
+    // Otherwise just update the hex preview in place — cheaper, and avoids any
+    // re-render churn while the learner is still composing the message.
+    const hexPreview = document.querySelector<HTMLSpanElement>('#message-hex');
+    if (hexPreview) {
+      hexPreview.textContent = state.value.message || '(empty)';
+    }
   });
 
   const round1Btn = document.querySelector<HTMLButtonElement>('#run-round1');
@@ -214,7 +279,11 @@ const bindEvents = (): void => {
     render();
     try {
       for (const identifier of state.value.selectedParticipants) {
-        const out = (await wasmRound1Commit(identifier)) as Round1Result;
+        const share = state.value.shares.find((s) => s.identifier === identifier);
+        if (!share) {
+          throw new Error('missing participant share for round1');
+        }
+        const out = (await wasmRound1Commit(identifier, share.secret)) as Round1Result;
         state.setRound1(identifier, {
           hidingNonce: out.hiding_nonce,
           bindingNonce: out.binding_nonce,
@@ -284,6 +353,7 @@ const bindEvents = (): void => {
   const failureToggle = document.querySelector<HTMLInputElement>('#simulate-failure');
   failureToggle?.addEventListener('change', () => {
     simulateFailure = failureToggle.checked;
+    render();
   });
 
   const aggregateBtn = document.querySelector<HTMLButtonElement>('#run-aggregate');
@@ -310,6 +380,8 @@ const bindEvents = (): void => {
 
       const filteredShares = simulateFailure ? signatureShares.slice(0, Math.max(0, signatureShares.length - 1)) : signatureShares;
 
+      // Aggregation only ever receives PUBLIC verifying shares — never the secret
+      // signing shares. The group private key is never reconstructed anywhere.
       const participantShares = state.value.selectedParticipants
         .map((id) => {
           const share = state.value.shares.find((s) => s.identifier === id);
@@ -318,10 +390,10 @@ const bindEvents = (): void => {
           }
           return {
             identifier: id,
-            secret: share.secret
+            verifying_share: share.verifyingShare
           };
         })
-        .filter((x): x is { identifier: string; secret: string } => x !== null);
+        .filter((x): x is { identifier: string; verifying_share: string } => x !== null);
 
       const out = (await wasmAggregate({
         signature_shares: filteredShares,

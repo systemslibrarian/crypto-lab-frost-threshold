@@ -1,7 +1,7 @@
 type WasmRaw = {
   default: () => Promise<unknown>;
   frost_keygen?: (threshold: number, numParticipants: number) => unknown;
-  frost_round1_commit?: (identifierHex: string) => unknown;
+  frost_round1_commit?: (identifierHex: string, signingShareHex: string) => unknown;
   frost_round2_sign?: (input: unknown) => unknown;
   frost_aggregate?: (input: unknown) => unknown;
 };
@@ -26,12 +26,15 @@ export const wasmKeygen = async (threshold: number, numParticipants: number): Pr
   return wasm.frost_keygen(threshold, numParticipants);
 };
 
-export const wasmRound1Commit = async (identifierHex: string): Promise<unknown> => {
+export const wasmRound1Commit = async (
+  identifierHex: string,
+  signingShareHex: string
+): Promise<unknown> => {
   const wasm = await ensure();
   if (!wasm.frost_round1_commit) {
     throw new Error('WASM export frost_round1_commit is missing');
   }
-  return wasm.frost_round1_commit(identifierHex);
+  return wasm.frost_round1_commit(identifierHex, signingShareHex);
 };
 
 export const wasmRound2Sign = async (input: unknown): Promise<unknown> => {

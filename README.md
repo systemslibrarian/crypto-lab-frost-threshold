@@ -5,11 +5,21 @@
 ## What It Is
 This demo implements FROST RFC 9591 threshold signing over Ed25519 with Schnorr-style signature shares, using Rust compiled to WASM in the browser. It walks through trusted-dealer key generation, Round 1 nonce commitments, Round 2 signature shares, and final aggregation into a standard Ed25519 signature. The protocol solves single-key concentration risk by requiring any threshold subset of participants to sign without reconstructing one private key. This is an asymmetric threshold-signature security model.
 
-## When to Use It
-- Use this when one account or service key should require multi-party approval, because threshold signing removes single-custodian control.
-- Use this for distributed key custody in teams, because FROST allows any t-of-n subset to produce one normal verifier-facing Ed25519 signature.
-- Use this when you need signer availability under partial outages, because signatures can still be generated if enough participants are online.
-- Do not use this when one signer must act instantly without coordination, because FROST signing requires participant interaction across rounds.
+## What It Teaches
+The demo walks the protocol end to end and proves four things with live values you generate yourself:
+- **The key is shared, never whole.** Key generation splits one Ed25519 key with Verifiable Secret Sharing. No participant — and crucially no aggregator — ever holds the full signing key. Aggregation runs on *public verifying shares*, and the code enforces that secrets never reach it.
+- **Any *t* signers suffice, with no special roles.** Pick any threshold-sized subset; which signers you choose is irrelevant.
+- **A share is not a signature.** Round 2 yields 32-byte partial shares that are useless alone; only aggregation produces a real signature.
+- **The result is indistinguishable from solo signing.** The output is an ordinary 64-byte Ed25519 signature that any standard verifier accepts. (The test suite cross-verifies it with the independent `ed25519-dalek` library.)
+
+A progress tracker, per-step "why it matters" callouts, and a closing recap reinforce each idea.
+
+## When FROST Is the Right Tool
+This demo is educational (see the threat model below), but conceptually FROST fits when:
+- One account or service key should require multi-party approval — threshold signing removes single-custodian control.
+- A team needs distributed key custody — any t-of-n subset produces one normal, verifier-facing Ed25519 signature.
+- Signer availability must survive partial outages — signatures still work if enough participants are online.
+- It is a poor fit when one signer must act instantly without coordination, since FROST signing is interactive across rounds.
 
 ## Live Demo
 Open the live demo at https://systemslibrarian.github.io/crypto-lab-frost-threshold/.
