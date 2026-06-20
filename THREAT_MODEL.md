@@ -8,8 +8,9 @@
 ## What This Demo Proves
 - The key is split and signing is share-based.
 - Signature shares alone are not full signatures.
-- Aggregated output verifies as standard Ed25519 signature bytes.
+- Aggregated output verifies as standard Ed25519 signature bytes (cross-checked in tests against the independent `ed25519-dalek` verifier).
 - Different valid subsets can produce different but valid signatures.
+- The group private key is never reconstructed — not by any participant and not by the aggregator. Aggregation consumes only public verifying shares; the code enforces this at the API boundary.
 
 ## What This Demo Does Not Prove
 - Production readiness under hostile endpoint compromise.
@@ -46,9 +47,9 @@ Risks:
 - Side-channel concerns are outside demo scope.
 
 ## Data Handling
-- Secrets are kept in memory only.
-- No localStorage/sessionStorage persistence.
-- Secret bytes are zeroized where feasible in Rust bridge.
+- Secrets are kept in memory only; no localStorage/sessionStorage persistence.
+- Secret bytes are zeroized in the Rust bridge after use.
+- Caveat: for pedagogical transparency, the WASM API returns each secret signing share to JavaScript (where it is shown under a "Show secret share scalar" disclosure). Those JS-resident copies live in the page's heap for the session and are not zeroizable from Rust. A production signer would never export secret shares to the UI layer.
 
 ## Coordinator and Aggregator Risks
 - Coordinator can deny service by withholding/biasing package assembly.

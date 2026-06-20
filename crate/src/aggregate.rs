@@ -16,10 +16,13 @@ pub struct SigningCommitmentInput {
 	pub binding_commitment: String,
 }
 
+/// Public verifying material for a participant, as produced by key generation.
+/// This carries ONLY the public verifying share — never the secret signing share.
+/// It is what a coordinator legitimately holds and what aggregation consumes.
 #[derive(Deserialize)]
 pub struct ParticipantShareInput {
 	pub identifier: String,
-	pub secret: String,
+	pub verifying_share: String,
 }
 
 #[derive(Deserialize)]
@@ -75,17 +78,20 @@ pub fn frost_aggregate_impl(input: AggregateInput) -> Result<AggregateOutput, St
 		return Err("under-threshold input: fewer signature shares than signing commitments".to_string());
 	}
 
+	// Aggregation rebuilds the PublicKeyPackage from PUBLIC verifying shares only.
+	// The secret signing shares stay with their participants and never reach this function —
+	// the group's private key is never reconstructed anywhere.
 	let mut verifying_shares = BTreeMap::new();
 	for p in &input.participant_shares {
 		let id = parse_identifier(&p.identifier)?;
-		let signing_share = keys::SigningShare::deserialize(&decode_hex("participant secret", &p.secret)?)
-			.map_err(|e| format!("invalid participant secret: {e}"))?;
-		let verifying_share = keys::VerifyingShare::from(signing_share);
+		let verifying_share =
+			keys::VerifyingShare::deserialize(&decode_hex("verifying share", &p.verifying_share)?)
+				.map_err(|e| format!("invalid verifying share: {e}"))?;
 		verifying_shares.insert(id, verifying_share);
 	}
 	if verifying_shares.is_empty() {
 		return Err(
-			"participant_shares are required for aggregation in this stateless WASM API"
+			"participant verifying shares are required for aggregation in this stateless WASM API"
 				.to_string(),
 		);
 	}

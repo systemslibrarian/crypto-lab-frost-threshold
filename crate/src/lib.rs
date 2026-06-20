@@ -22,8 +22,11 @@ pub fn frost_keygen(threshold: u16, num_participants: u16) -> Result<JsValue, Js
 }
 
 #[wasm_bindgen]
-pub fn frost_round1_commit(identifier_hex: &str) -> Result<JsValue, JsValue> {
-    round1::frost_round1_commit_impl(identifier_hex)
+pub fn frost_round1_commit(
+    identifier_hex: &str,
+    signing_share_hex: &str,
+) -> Result<JsValue, JsValue> {
+    round1::frost_round1_commit_impl(identifier_hex, signing_share_hex)
         .and_then(|output| to_value(&output).map_err(|e| e.to_string()))
         .map_err(|e| JsValue::from_str(&e))
 }
