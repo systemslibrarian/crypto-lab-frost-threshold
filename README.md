@@ -1,9 +1,51 @@
 # crypto-lab-frost-threshold
 
-**[Live Demo →](https://systemslibrarian.github.io/crypto-lab-frost-threshold/)**
-
 ## What It Is
 This demo implements FROST RFC 9591 threshold signing over Ed25519 with Schnorr-style signature shares, using Rust compiled to WASM in the browser. It walks through trusted-dealer key generation, Round 1 nonce commitments, Round 2 signature shares, and final aggregation into a standard Ed25519 signature. The protocol solves single-key concentration risk by requiring any threshold subset of participants to sign without reconstructing one private key. This is an asymmetric threshold-signature security model.
+
+## When to Use It
+This demo is educational (see the threat model below), but conceptually FROST fits when:
+- One account or service key should require multi-party approval — threshold signing removes single-custodian control.
+- A team needs distributed key custody — any t-of-n subset produces one normal, verifier-facing Ed25519 signature.
+- Signer availability must survive partial outages — signatures still work if enough participants are online.
+- It is a poor fit when one signer must act instantly without coordination, since FROST signing is interactive across rounds.
+- Do NOT use this implementation in production — it is an educational WASM demo, not an audited threshold-signing library.
+
+## Live Demo
+**[systemslibrarian.github.io/crypto-lab-frost-threshold](https://systemslibrarian.github.io/crypto-lab-frost-threshold/)**
+
+You can set participant count n and threshold t, generate shares, run Round 1 and Round 2, and aggregate the signature for verification. The interface also includes message input and a simulate-failure control to demonstrate invalid aggregation when insufficient shares are provided.
+
+## What Can Go Wrong
+- **Nonce reuse across signing attempts.** Reusing a per-signature nonce, or producing two signatures from the same Round 1 commitment, can leak signing-share secrets — the same class of failure that breaks single-party Schnorr/Ed25519.
+- **Skipping nonce-commitment binding.** FROST binds each nonce commitment into the challenge specifically to defend against the Drijvers-style attacks on naive multi-signatures; omitting the binding factor reopens those attacks.
+- **Trusted-dealer key generation is a single point of trust.** This demo uses a trusted dealer; a real deployment usually wants a distributed key generation so no one party ever sees the full key.
+- **Wrong threshold or insufficient shares.** Supplying fewer than t shares cannot produce a valid signature; mismatched participant sets or indices yield aggregation that fails verification.
+- **Weak randomness for nonces.** Predictable Round 1 nonces undermine the whole scheme, since Schnorr security rests on unique, unpredictable nonces.
+
+## Real-World Usage
+- **RFC 9591** standardizes FROST, giving interoperable two-round threshold Schnorr signing for implementers.
+- **Cryptocurrency custody and wallets** use threshold Schnorr so that spending requires a t-of-n quorum rather than one exposed private key.
+- **Bitcoin Taproot / BIP-340 Schnorr** makes FROST-style threshold signatures attractive because the aggregate output is an ordinary on-chain Schnorr signature with no special script.
+- **Reference implementations** such as the Zcash Foundation's `frost` crates provide audited libraries that production systems build on.
+- **Distributed code/release signing** can require multiple maintainers to jointly produce one verifier-facing signature without a shared key file.
+
+## How to Run Locally
+```bash
+git clone https://github.com/systemslibrarian/crypto-lab-frost-threshold
+cd crypto-lab-frost-threshold
+npm install
+npm run dev
+```
+
+No environment variables are required for local development.
+
+## Related Demos
+- [crypto-lab-gg20-wallet](https://systemslibrarian.github.io/crypto-lab-gg20-wallet/) — threshold ECDSA, the harder secp256k1 cousin of threshold Schnorr.
+- [crypto-lab-threshold-mldsa](https://systemslibrarian.github.io/crypto-lab-threshold-mldsa/) — distributed post-quantum signing with threshold ML-DSA.
+- [crypto-lab-vss-gate](https://systemslibrarian.github.io/crypto-lab-vss-gate/) — Feldman/Pedersen verifiable secret sharing, the keygen layer under FROST.
+- [crypto-lab-shamir-gate](https://systemslibrarian.github.io/crypto-lab-shamir-gate/) — Shamir secret sharing and Lagrange interpolation fundamentals.
+- [crypto-lab-ed25519-forge](https://systemslibrarian.github.io/crypto-lab-ed25519-forge/) — the single-party Ed25519 signature FROST aggregates into.
 
 ## What It Teaches
 The demo walks the protocol end to end and proves four things with live values you generate yourself:
@@ -14,28 +56,8 @@ The demo walks the protocol end to end and proves four things with live values y
 
 A progress tracker, per-step "why it matters" callouts, and a closing recap reinforce each idea.
 
-## When FROST Is the Right Tool
-This demo is educational (see the threat model below), but conceptually FROST fits when:
-- One account or service key should require multi-party approval — threshold signing removes single-custodian control.
-- A team needs distributed key custody — any t-of-n subset produces one normal, verifier-facing Ed25519 signature.
-- Signer availability must survive partial outages — signatures still work if enough participants are online.
-- It is a poor fit when one signer must act instantly without coordination, since FROST signing is interactive across rounds.
+---
 
-## Live Demo
-Open the live demo at https://systemslibrarian.github.io/crypto-lab-frost-threshold/.
-You can set participant count n and threshold t, generate shares, run Round 1 and Round 2, and aggregate the signature for verification. The interface also includes message input and a simulate-failure control to demonstrate invalid aggregation when insufficient shares are provided.
+*One of 60+ browser demos in the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite.*
 
-## How to Run Locally
-```bash
-git clone https://github.com/systemslibrarian/crypto-lab-frost-threshold.git
-cd crypto-lab-frost-threshold
-npm install
-npm run dev
-```
-
-No environment variables are required for local development.
-
-## Part of the Crypto-Lab Suite
-This project is part of the broader crypto-lab collection at https://systemslibrarian.github.io/crypto-lab/.
-
-So whether you eat or drink or whatever you do, do it all for the glory of God. - 1 Corinthians 10:31
+*"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31*
