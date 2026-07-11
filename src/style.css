@@ -30,11 +30,18 @@
 	box-sizing: border-box;
 }
 
+/* Explicit canvas background + color-scheme: WebKit reports body->canvas
+   propagation as transparent, which breaks automated contrast checks. */
+html {
+	background-color: #0f172a;
+	color-scheme: dark;
+}
+
 body {
 	margin: 0;
 	color: var(--ink);
 	font-family: 'Space Grotesk', sans-serif;
-	background: #0f172a;
+	background-color: #0f172a;
 	background-image:
 		radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.3), transparent),
 		radial-gradient(ellipse 60% 40% at 80% 60%, rgba(6, 182, 212, 0.15), transparent),
@@ -79,14 +86,14 @@ body {
 	justify-content: center;
 	font-size: 1.1rem;
 	border: 1px solid var(--line);
-	background: var(--surface-1);
+	background-color: var(--surface-1);
 	color: var(--ink);
 	box-shadow: none;
 	z-index: 2;
 }
 
 .theme-toggle:hover:not(:disabled) {
-	background: var(--surface-2);
+	background-color: var(--surface-2);
 	transform: translateY(0);
 	box-shadow: none;
 }
@@ -97,7 +104,7 @@ body {
 
 html[data-theme='dark'] .theme-toggle {
 	color: var(--paper);
-	background: var(--surface-2);
+	background-color: var(--surface-2);
 }
 
 .hero::before {
@@ -135,6 +142,12 @@ h1 {
 	max-width: 640px;
 }
 
+/* Highlighted term in the hero intro (was an inline style; needs a light-theme
+   override because --brand-soft is near-invisible on the white light-theme card). */
+.hero p strong {
+	color: var(--brand-soft);
+}
+
 .hero-chips {
 	display: flex;
 	gap: 0.5rem;
@@ -150,14 +163,14 @@ h1 {
 	font-weight: 600;
 	letter-spacing: 0.04em;
 	color: #a5b4fc;
-	background: rgba(99, 102, 241, 0.12);
+	background-color: rgba(99, 102, 241, 0.12);
 	border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 /* --- Exhibits --- */
 .exhibit {
 	position: relative;
-	background: rgba(30, 41, 59, 0.6);
+	background-color: rgba(30, 41, 59, 0.6);
 	backdrop-filter: blur(16px);
 	border: 1px solid rgba(148, 163, 184, 0.12);
 	border-radius: 20px;
@@ -207,7 +220,7 @@ input[type='text'] {
 	border-radius: 12px;
 	padding: 0.7rem 0.9rem;
 	font: inherit;
-	background: rgba(15, 23, 42, 0.5);
+	background-color: rgba(15, 23, 42, 0.5);
 	color: #e2e8f0;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -227,7 +240,9 @@ button {
 	border: none;
 	border-radius: 12px;
 	padding: 0.6rem 1.2rem;
-	background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+	/* Deeper indigo pair than plain --brand: white text clears 4.5:1 across
+	   the whole gradient (white on #6366f1 is only 4.47:1). */
+	background: linear-gradient(135deg, var(--brand-dark), #4338ca);
 	color: white;
 	font: inherit;
 	font-weight: 600;
@@ -279,7 +294,7 @@ button:disabled {
 	border: 1px solid rgba(148, 163, 184, 0.1);
 	border-radius: 16px;
 	padding: 1rem;
-	background: rgba(15, 23, 42, 0.4);
+	background-color: rgba(15, 23, 42, 0.4);
 	transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -307,7 +322,7 @@ button:disabled {
 .participant {
 	text-align: left;
 	border: 1px solid rgba(148, 163, 184, 0.15);
-	background: rgba(15, 23, 42, 0.4);
+	background-color: rgba(15, 23, 42, 0.4);
 	color: #e2e8f0;
 	display: grid;
 	gap: 0.35rem;
@@ -323,12 +338,8 @@ button:disabled {
 
 .participant.selected {
 	border-color: var(--brand);
-	background: rgba(99, 102, 241, 0.1);
+	background-color: rgba(99, 102, 241, 0.1);
 	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 0 20px rgba(99, 102, 241, 0.1);
-}
-
-.participant.dimmed {
-	opacity: 0.5;
 }
 
 /* --- Mono / Status --- */
@@ -349,7 +360,7 @@ button:disabled {
 
 .error {
 	color: #f87171;
-	background: rgba(220, 38, 38, 0.1);
+	background-color: rgba(220, 38, 38, 0.1);
 	border: 1px solid rgba(220, 38, 38, 0.2);
 	border-radius: 10px;
 	padding: 0.5rem 0.75rem;
@@ -385,7 +396,8 @@ details {
 }
 
 details summary {
-	color: var(--brand);
+	/* #818cf8 instead of --brand: #6366f1 is only 3.57:1 on the exhibit bg */
+	color: #818cf8;
 	cursor: pointer;
 	font-size: 0.9rem;
 	font-weight: 600;
@@ -393,7 +405,7 @@ details summary {
 }
 
 details summary:hover {
-	color: #818cf8;
+	color: #a5b4fc;
 }
 
 /* --- Step Badge --- */
@@ -404,7 +416,8 @@ details summary:hover {
 	width: 1.65rem;
 	height: 1.65rem;
 	border-radius: 8px;
-	background: linear-gradient(135deg, var(--brand), var(--accent));
+	/* Darker indigo->cyan pair: white text on #06b6d4 is only 2.43:1 */
+	background: linear-gradient(135deg, var(--brand-dark), #0e7490);
 	color: white;
 	font-size: 0.8rem;
 	font-weight: 700;
@@ -448,7 +461,7 @@ details summary:hover {
 	right: 50%;
 	width: 100%;
 	height: 2px;
-	background: rgba(148, 163, 184, 0.25);
+	background-color: rgba(148, 163, 184, 0.25);
 	z-index: 0;
 }
 
@@ -472,20 +485,22 @@ details summary:hover {
 	font-size: 0.85rem;
 	font-weight: 700;
 	border: 2px solid rgba(148, 163, 184, 0.3);
-	background: rgba(15, 23, 42, 0.85);
+	background-color: rgba(15, 23, 42, 0.85);
 	color: #94a3b8;
 	transition: all 0.3s ease;
 }
 
 .progress-step.is-done .progress-dot {
-	background: linear-gradient(135deg, var(--brand), var(--accent));
+	/* Darker indigo->cyan pair: white text on #06b6d4 is only 2.43:1 */
+	background: linear-gradient(135deg, var(--brand-dark), #0e7490);
 	border-color: transparent;
 	color: #fff;
 }
 
 .progress-step.is-active .progress-dot {
 	border-color: var(--brand);
-	color: var(--brand);
+	/* #818cf8 instead of --brand: #6366f1 is only 3.93:1 on the dot bg */
+	color: #818cf8;
 	box-shadow: 0 0 0 4px var(--brand-glow);
 	animation: pulse 2s ease-in-out infinite;
 }
@@ -519,7 +534,7 @@ details summary:hover {
 	margin: 0.9rem 0 0.4rem;
 	padding: 0.8rem 1rem;
 	border-radius: 12px;
-	background: rgba(99, 102, 241, 0.08);
+	background-color: rgba(99, 102, 241, 0.08);
 	border: 1px solid rgba(99, 102, 241, 0.2);
 	border-left: 3px solid var(--brand);
 }
@@ -543,7 +558,7 @@ details summary:hover {
 }
 
 .insight-warn {
-	background: rgba(217, 119, 6, 0.1);
+	background-color: rgba(217, 119, 6, 0.1);
 	border-color: rgba(217, 119, 6, 0.3);
 	border-left-color: var(--warn);
 }
@@ -566,7 +581,7 @@ details summary:hover {
 	gap: 0.2rem;
 	padding: 0.8rem 1rem;
 	border-radius: 12px;
-	background: rgba(15, 23, 42, 0.4);
+	background-color: rgba(15, 23, 42, 0.4);
 	border: 1px solid rgba(148, 163, 184, 0.12);
 	border-left: 3px solid var(--accent);
 }
@@ -585,7 +600,7 @@ details summary:hover {
 .recap-live {
 	padding: 0.8rem 1rem;
 	border-radius: 12px;
-	background: rgba(16, 185, 129, 0.08);
+	background-color: rgba(16, 185, 129, 0.08);
 	border: 1px solid rgba(16, 185, 129, 0.25);
 	color: #b9d9c9;
 	line-height: 1.6;
@@ -612,6 +627,17 @@ details summary:hover {
 	font-weight: 700;
 }
 
+/* --- Page footer --- */
+/* Explicit colors: the footer would otherwise inherit body's --ink text,
+   which is invisible (1:1) on the dark page background. */
+body > footer {
+	color: #94a3b8;
+}
+
+body > footer a {
+	color: #a5b4fc;
+}
+
 /* --- Animations --- */
 @keyframes rise {
 	from {
@@ -632,14 +658,20 @@ details summary:hover {
 .exhibit:nth-child(7) { animation-delay: 360ms; }
 
 /* --- Light theme overrides --- */
+html[data-theme='light'] {
+	background-color: var(--paper);
+	color-scheme: light;
+}
+
 html[data-theme='light'] body {
-	background: var(--paper);
+	background-color: var(--paper);
 	background-image: none;
 	color: var(--ink);
 }
 
 html[data-theme='light'] .hero {
-	background: var(--card);
+	background-color: var(--card);
+	background-image: none;
 	border-color: var(--line);
 	box-shadow: 0 12px 28px var(--brand-glow);
 }
@@ -669,8 +701,27 @@ html[data-theme='light'] .toggle {
 
 html[data-theme='light'] .chip,
 html[data-theme='light'] .mono,
+html[data-theme='light'] .hero p strong,
 html[data-theme='light'] details summary {
 	/* brand-dark (#4f46e5) clears WCAG AA 4.5:1 on white; plain brand is borderline */
+	color: var(--brand-dark);
+}
+
+/* Status colors tuned for white cards: the dark-theme hues fail AA on white
+   (#d97706 3.19:1, #f87171 2.37:1, #34d399 1.92:1). */
+html[data-theme='light'] .warning {
+	color: #b45309;
+}
+
+html[data-theme='light'] .error {
+	color: #b91c1c;
+}
+
+html[data-theme='light'] .verified {
+	color: #047857;
+}
+
+html[data-theme='light'] .progress-step.is-active .progress-dot {
 	color: var(--brand-dark);
 }
 
@@ -683,20 +734,20 @@ html[data-theme='light'] .progress-step.is-done .progress-label {
 html[data-theme='light'] .exhibit,
 html[data-theme='light'] .card,
 html[data-theme='light'] .participant {
-	background: var(--card);
+	background-color: var(--card);
 	border-color: var(--line);
 	box-shadow: none;
 	color: var(--ink);
 }
 
 html[data-theme='light'] input[type='text'] {
-	background: var(--card);
+	background-color: var(--card);
 	border-color: var(--line);
 	color: var(--ink);
 }
 
 html[data-theme='light'] .insight {
-	background: var(--brand-soft);
+	background-color: var(--brand-soft);
 	border-color: rgba(99, 102, 241, 0.25);
 	border-left-color: var(--brand);
 }
@@ -711,7 +762,7 @@ html[data-theme='light'] .insight p .mono {
 }
 
 html[data-theme='light'] .insight-warn {
-	background: var(--warn-soft);
+	background-color: var(--warn-soft);
 	border-color: rgba(217, 119, 6, 0.35);
 	border-left-color: var(--warn);
 }
@@ -721,7 +772,7 @@ html[data-theme='light'] .insight-warn p {
 }
 
 html[data-theme='light'] .recap-list li {
-	background: var(--paper);
+	background-color: var(--paper);
 	border-color: var(--line);
 	border-left-color: var(--accent);
 }
@@ -735,7 +786,7 @@ html[data-theme='light'] .recap-list span {
 }
 
 html[data-theme='light'] .recap-live {
-	background: var(--ok-soft);
+	background-color: var(--ok-soft);
 	border-color: rgba(5, 150, 105, 0.3);
 	color: #065f46;
 }
@@ -745,7 +796,7 @@ html[data-theme='light'] .recap-live .mono {
 }
 
 html[data-theme='light'] .progress-dot {
-	background: #fff;
+	background-color: #fff;
 	border-color: var(--line);
 	color: var(--muted);
 }
@@ -762,6 +813,14 @@ html[data-theme='light'] .progress-step.is-active .progress-label {
 	color: var(--brand-dark);
 }
 
+html[data-theme='light'] body > footer {
+	color: var(--muted);
+}
+
+html[data-theme='light'] body > footer a {
+	color: var(--brand-dark);
+}
+
 /* --- Scrollbar --- */
 ::-webkit-scrollbar {
 	width: 6px;
@@ -770,7 +829,7 @@ html[data-theme='light'] .progress-step.is-active .progress-label {
 	background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-	background: rgba(148, 163, 184, 0.2);
+	background-color: rgba(148, 163, 184, 0.2);
 	border-radius: 3px;
 }
 
@@ -805,7 +864,8 @@ button:focus-visible {
 	left: -9999px;
 	top: 0.5rem;
 	z-index: 100;
-	background: var(--brand);
+	/* brand-dark: white on plain --brand (#6366f1) is only 4.47:1 */
+	background-color: var(--brand-dark);
 	color: white;
 	padding: 0.6rem 1.2rem;
 	border-radius: 8px;
