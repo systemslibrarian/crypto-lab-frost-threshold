@@ -5,3 +5,6 @@ pkg/
 crate/target/
 *.tsbuildinfo
 scripts/shot-*.png
+/test-results/
+/playwright-report/
+/.pw-browsers/
