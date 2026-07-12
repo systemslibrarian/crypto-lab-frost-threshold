@@ -110,7 +110,7 @@ const render = (): void => {
 
   app.innerHTML = `
     <main class="shell" id="main-content">
-      <header class="hero">
+      <header class="cl-hero">
         <button
           id="theme-toggle"
           class="theme-toggle"
@@ -118,19 +118,29 @@ const render = (): void => {
           aria-label="${toggleMeta.ariaLabel}"
           title="${toggleMeta.ariaLabel}"
         >${toggleMeta.icon}</button>
-        <p class="eyebrow">systemslibrarian &middot; crypto-lab</p>
-        <h1>frost&#8209;threshold</h1>
-        <p>
-          <strong>FROST RFC 9591</strong> — a way for a group to share one signing key
-          so that any minimum subset can sign, but no individual can. Built with real
-          Rust cryptography compiled to your browser. Every value below is live.
-        </p>
-        <div class="hero-chips">
-          <span class="chip">Ed25519</span>
-          <span class="chip">Schnorr</span>
-          <span class="chip">t-of-n</span>
-          <span class="chip">WASM</span>
+        <div class="cl-hero-main">
+          <h1 class="cl-hero-title">FROST</h1>
+          <p class="cl-hero-sub">t-of-n Threshold Schnorr &middot; Ed25519 &middot; RFC 9591</p>
+          <p class="cl-hero-desc">
+            Run FROST live in your browser: generate one shared group key, pick any
+            threshold subset, and watch its members jointly produce a single ordinary
+            Ed25519 Schnorr signature over two rounds.
+          </p>
+          <div class="cl-hero-chips">
+            <span class="chip">Ed25519</span>
+            <span class="chip">Schnorr</span>
+            <span class="chip">t-of-n</span>
+            <span class="chip">WASM</span>
+          </div>
         </div>
+        <aside class="cl-hero-why" aria-label="Why it matters">
+          <span class="cl-hero-why-label">WHY IT MATTERS</span>
+          <p class="cl-hero-why-text">
+            No single person ever holds the whole key, so one compromised or coerced
+            signer cannot forge a signature or lose the funds. The output is an ordinary
+            signature verifiers already accept — no special multisig support needed.
+          </p>
+        </aside>
       </header>
 
       ${renderProgress(state.value)}

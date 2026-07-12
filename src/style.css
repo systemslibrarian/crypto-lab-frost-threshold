@@ -148,12 +148,45 @@ h1 {
 	color: var(--brand-soft);
 }
 
-.hero-chips {
+.hero-chips,
+.cl-hero-chips {
 	display: flex;
 	gap: 0.5rem;
 	flex-wrap: wrap;
 	margin-top: 1rem;
 }
+
+/* BEGIN cl-hero standard — managed, keep in sync across fleet */
+.cl-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:clamp(1rem,4vw,3rem);flex-wrap:wrap;margin:clamp(1rem,3vw,2rem) 0 1.5rem;}
+.cl-hero-main{flex:1 1 22rem;min-width:min(100%,20rem);}
+.cl-hero-title{margin:0;font-size:clamp(1.6rem,3.8vw,2.7rem);font-weight:700;line-height:1.1;letter-spacing:.01em;}
+.cl-hero-sub{margin:.4rem 0 0;font-size:clamp(.9rem,1.6vw,1.05rem);letter-spacing:.01em;opacity:.85;}
+.cl-hero-desc{margin:.55rem 0 0;font-size:1rem;line-height:1.5;color:var(--text-dim);max-width:60ch;}
+.cl-hero-why{flex:0 1 min(40%,26rem);min-width:min(100%,15rem);border:1px solid var(--border);border-radius:10px;padding:.85rem 1.05rem;background:color-mix(in oklab,var(--accent) 6%,transparent);}
+.cl-hero-why-label{display:block;font-size:.68rem;font-weight:700;letter-spacing:.14em;}
+.cl-hero-why-text{margin:.35rem 0 0;font-size:.95rem;line-height:1.5;}
+@media (max-width:640px){.cl-hero{flex-direction:column;}.cl-hero-why{flex-basis:auto;width:100%;}}
+/* END cl-hero standard */
+
+/* cl-hero theme mapping for this demo (not part of managed block):
+   the standard uses --text-dim/--border/--accent; map to this demo's vars and
+   ensure contrast passes axe in both themes. */
+:root{--text-dim:#94a3b8;--border:var(--line);}
+.cl-hero{position:relative;} /* anchor the absolutely-positioned theme toggle */
+.cl-hero-title{
+	background:linear-gradient(135deg,#e0e7ff,#c7d2fe,#a5b4fc,#818cf8);
+	-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.cl-hero-sub{color:#a5b4fc;}
+.cl-hero-why-label{color:var(--accent);}
+.cl-hero-why-text{color:#b9c2d4;}
+html[data-theme='light'] .cl-hero-title{
+	background:none;-webkit-text-fill-color:currentColor;color:var(--ink);
+}
+html[data-theme='light'] .cl-hero-sub{color:var(--brand-dark);opacity:1;}
+html[data-theme='light'] .cl-hero-desc{color:var(--muted);}
+html[data-theme='light'] .cl-hero-why-label{color:var(--brand-dark);}
+html[data-theme='light'] .cl-hero-why-text{color:var(--ink);}
 
 .chip {
 	display: inline-block;
