@@ -1,10 +1,12 @@
 import { bytesLabel, ellipsisSafe, escapeHtml, insight } from '../ui/display';
+import { renderShamirPlot } from './shamir-plot';
 import type { FrostSession } from '../ui/state';
 
 export const renderKeygenExhibit = (
   session: FrostSession,
   busy: boolean,
-  error: string | null
+  error: string | null,
+  shamirRevealAll: boolean
 ): string => {
   const sharesHtml = session.shares
     .map(
@@ -32,6 +34,16 @@ export const renderKeygenExhibit = (
 
   return `
     <section class="exhibit">
+      <aside class="big-picture" role="note">
+        <span class="big-picture-label">THE PROBLEM FROST SOLVES</span>
+        <p>
+          One private key is a single point of failure — steal it once, coerce one holder once,
+          and it's over. FROST spreads that one key across a group so <strong>no one ever holds
+          it whole</strong>, yet any <em>t</em> of them can still jointly sign. The signature they
+          produce is an ordinary Ed25519 signature the rest of the world already accepts.
+        </p>
+      </aside>
+
       <h2><span class="step-badge">1</span> Key Generation</h2>
       <p>
         A trusted setup splits one master signing key into pieces — like tearing a treasure map
@@ -43,6 +55,17 @@ export const renderKeygenExhibit = (
       ${insight(
         `Each share is a point on a secret polynomial whose constant term is the master key — that's <strong>Shamir secret sharing</strong>. Any <em>t</em> points reconstruct the polynomial; fewer reveal nothing. FROST never actually reconstructs it — it interpolates <em>signatures</em> instead of the key. Each participant also gets a public <strong>verifying share</strong>; that, not the secret, is what aggregation uses.`
       )}
+
+      <details class="viz-details" open>
+        <summary>See the threshold property — the secret polynomial</summary>
+        <p class="viz-lead">
+          Below is a small, illustrative degree-(t−1) polynomial over a toy field
+          <span class="mono">(p = 97)</span>. Each participant's share is one point on it.
+          Toggle how many points are revealed and watch what happens to the secret at x = 0.
+          <span class="muted">(Illustrative geometry only; the real shares are 256-bit scalars over the Ed25519 field.)</span>
+        </p>
+        ${renderShamirPlot(session, shamirRevealAll)}
+      </details>
 
       <div class="grid-2">
         <label>

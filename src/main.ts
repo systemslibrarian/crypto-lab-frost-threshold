@@ -63,6 +63,7 @@ const getThemeToggleMeta = (theme: ThemeMode): { icon: string; ariaLabel: string
     : { icon: '☀️', ariaLabel: 'Switch to dark mode' };
 
 let messageText = 'Hello from FROST';
+let shamirRevealAll = false;
 let keygenBusy = false;
 let round1Busy = false;
 let round2Busy = false;
@@ -144,12 +145,12 @@ const render = (): void => {
       </header>
 
       ${renderProgress(state.value)}
-      ${renderKeygenExhibit(state.value, keygenBusy, keygenError)}
+      ${renderKeygenExhibit(state.value, keygenBusy, keygenError, shamirRevealAll)}
       ${renderSubsetExhibit(state.value)}
       ${renderRound1Exhibit(state.value, messageText, round1Busy, round1Error)}
       ${renderRound2Exhibit(state.value, round2Busy, round2Error)}
       ${renderAggregateExhibit(state.value, simulateFailure, aggregateBusy, aggregateError)}
-      ${renderAnySubsetExhibit(previous, latest, state.value.finalSignature !== null)}
+      ${renderAnySubsetExhibit(previous, latest, state.value.finalSignature !== null, state.value.groupPublicKey)}
       ${renderRecap(state.value)}
     </main>
   `;
@@ -232,6 +233,17 @@ const bindEvents = (): void => {
       keygenBusy = false;
       render();
     }
+  });
+
+  // Shamir polynomial visual: toggle between showing t-1 shares (secret
+  // undetermined) and t shares (curve locks in, secret = f(0)).
+  document.querySelector<HTMLButtonElement>('#sp-toggle-under')?.addEventListener('click', () => {
+    shamirRevealAll = false;
+    render();
+  });
+  document.querySelector<HTMLButtonElement>('#sp-toggle-full')?.addEventListener('click', () => {
+    shamirRevealAll = true;
+    render();
   });
 
   document.querySelectorAll<HTMLButtonElement>('[data-participant-id]').forEach((btn) => {

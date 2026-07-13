@@ -14,7 +14,7 @@ export const renderRound2Exhibit = (
           <h3>${ellipsisSafe(id)}</h3>
           <p><strong>Signature share:</strong></p>
           <p class="mono">${sig ? escapeHtml(sig) : '(not generated yet)'}</p>
-          <p class="muted">${sig ? `A ${bytesLabel(sig)} scalar — half the size of a real signature, and worthless alone.` : 'This share is worthless alone.'}</p>
+          <p class="muted">${sig ? `A ${bytesLabel(sig)} scalar — summed into (not glued onto) the final signature, and worthless alone.` : 'This share is worthless alone.'}</p>
         </article>
       `;
     })
@@ -31,7 +31,7 @@ export const renderRound2Exhibit = (
       </p>
 
       ${insight(
-        `<strong>A share is not a signature.</strong> Each output below is a 32-byte scalar — a partial value tied to this exact message, this exact set of signers, and this signer's one-time nonce. Hand one to a verifier and it fails: it isn't a 64-byte Ed25519 signature, and it carries no meaning until the next step recombines <em>t</em> of them.`
+        `<strong>A share is not a signature.</strong> Each output below is a 32-byte scalar — a partial value tied to this exact message, this exact set of signers, and this signer's one-time nonce. Hand one to a verifier and it fails: it isn't a 64-byte Ed25519 signature. And two 32-byte shares are <em>not</em> concatenated into a 64-byte signature — in the next step, <em>t</em> shares are <strong>summed into one 32-byte scalar</strong> <span class="mono">s</span>, which is paired with a 32-byte commitment <span class="mono">R</span> to make the 64-byte <span class="mono">(R, s)</span>.`
       )}
 
       <button id="run-round2" ${busy ? 'disabled' : ''}>Run Round 2</button>

@@ -1,4 +1,4 @@
-import { ellipsisSafe, insight } from '../ui/display';
+import { bytesLabel, ellipsisSafe, escapeHtml, insight } from '../ui/display';
 import type { FrostSession } from '../ui/state';
 
 export const renderSubsetExhibit = (session: FrostSession): string => {
@@ -53,24 +53,45 @@ export const renderSubsetExhibit = (session: FrostSession): string => {
 export const renderAnySubsetExhibit = (
   previous: { participants: string[]; signature: string } | undefined,
   latest: { participants: string[]; signature: string } | undefined,
-  canRetry: boolean
+  canRetry: boolean,
+  groupPublicKey: string
 ): string => {
+  const sameSig = previous && latest && previous.signature === latest.signature;
+
+  const subsetColumn = (
+    label: string,
+    entry: { participants: string[]; signature: string }
+  ): string => `
+    <article class="card subset-col">
+      <h3>${label}</h3>
+      <p class="subset-signers">${entry.participants.length} signers</p>
+      <p class="subset-field-label"><strong>Signature (varies):</strong></p>
+      <p class="mono subset-sig">${escapeHtml(entry.signature)}</p>
+      <p class="subset-field-label"><strong>Verifies against group key:</strong></p>
+      <p class="mono subset-key">${escapeHtml(groupPublicKey)} <span class="muted">(${bytesLabel(groupPublicKey)})</span></p>
+      <p class="subset-verdict" role="status">
+        <span class="subset-check" aria-hidden="true">✓</span>
+        <span>Valid signature — verifies against this key</span>
+      </p>
+    </article>
+  `;
+
   const comparison = previous && latest
     ? `
-      <div class="grid-2">
-        <article class="card">
-          <h3>Earlier subset</h3>
-          <p>${previous.participants.length} signers</p>
-          <p class="mono">${previous.signature}</p>
-        </article>
-        <article class="card">
-          <h3>Latest subset</h3>
-          <p>${latest.participants.length} signers</p>
-          <p class="mono">${latest.signature}</p>
-        </article>
+      <div class="grid-2 subset-compare">
+        ${subsetColumn('Earlier subset', previous)}
+        ${subsetColumn('Latest subset', latest)}
       </div>
+      <aside class="subset-invariant" role="note">
+        <p>
+          <strong>The two signatures differ byte-for-byte</strong>${sameSig ? ' (or, by chance of the same subset, matched this run)' : ''},
+          yet the <strong>group public key above is byte-for-byte identical</strong> in both columns — and
+          both verify against it. That constant key, never the varying signatures, is the group's stable
+          public identity. The master private key was never reassembled to make either one.
+        </p>
+      </aside>
     `
-    : '<p class="muted">Run at least two successful signatures to compare outputs.</p>';
+    : '<p class="muted">Run at least two successful signatures with different signer sets to compare outputs against the invariant key.</p>';
 
   return `
     <section class="exhibit">
