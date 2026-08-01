@@ -22,11 +22,11 @@ export const renderAggregateExhibit = (
         The partial signatures are mathematically stitched back together into one final signature.
         The result looks exactly like a normal single-person signature — nobody can tell a group
         was involved. Any standard verifier will accept it.
-        <span class="muted">(Lagrange interpolation → standard 64-byte Ed25519 Schnorr signature)</span>
+        <span class="muted">(RFC 9591 §5.3: z = z₁ + … + z_t → standard 64-byte Ed25519 Schnorr signature)</span>
       </p>
 
       ${insight(
-        `<strong>Watch what the aggregator receives:</strong> the signature shares, the public commitments, and each signer's <em>public verifying share</em> — and nothing else. No secret signing share is ever sent here. The group's private key is reconstructed <em>nowhere</em>; aggregation interpolates the signature directly. That is the whole point of FROST, and this demo's code enforces it.`
+        `<strong>Watch what the aggregator receives:</strong> the signature shares, the public commitments, and each signer's <em>public verifying share</em> — and nothing else. No secret signing share is ever sent here. The group's private key is reconstructed <em>nowhere</em>; each signer already interpolated its own contribution in Round 2, so the aggregator just adds the shares. That is the whole point of FROST, and this demo's code enforces it.`
       )}
 
       ${renderAggregateFlow(session)}

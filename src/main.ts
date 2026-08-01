@@ -382,6 +382,9 @@ const bindEvents = (): void => {
   aggregateBtn?.addEventListener('click', async () => {
     aggregateBusy = true;
     aggregateError = null;
+    // Retire the previous verdict before re-running: an attempt that fails must
+    // not leave the last run's "valid signature" banner standing.
+    state.clearAggregateResult();
     render();
     try {
       state.requireEnoughSharesForAggregation();

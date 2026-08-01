@@ -32,6 +32,11 @@ export interface FrostSession {
 export interface FrostHistoryEntry {
   participants: string[];
   signature: string;
+  /** The verdict the WASM verifier returned for this signature. Never assumed. */
+  verified: boolean;
+  /** The group key this signature was produced under, so the comparison exhibit
+   *  can never show a signature next to a key it does not verify against. */
+  groupPublicKey: string;
 }
 
 const makeInitial = (): FrostSession => ({
@@ -80,6 +85,7 @@ export class FrostStateManager {
     this.session.groupPublicKey = '';
     this.session.shares = [];
     this.resetSigningButKeepKeys();
+    this.signatureHistory = [];
   }
 
   /**
@@ -108,6 +114,10 @@ export class FrostStateManager {
     this.session.groupPublicKey = groupPublicKey;
     this.session.shares = shares;
     this.resetSigningButKeepKeys();
+    // A new group key retires every earlier signature: those signatures verify
+    // against the OLD key, and the comparison exhibit renders history against the
+    // current one. Keeping them would show a signature beside a key it fails under.
+    this.signatureHistory = [];
   }
 
   toggleParticipant(identifier: string): void {
@@ -185,13 +195,26 @@ export class FrostStateManager {
     }
   }
 
+  /**
+   * Drop the previous aggregation verdict. Called before every aggregate attempt
+   * so a run that errors (e.g. the simulate-failure toggle withholding a share)
+   * cannot leave the earlier run's "Valid Ed25519 Schnorr Signature" banner on
+   * screen next to the new error. History of successful signatures is kept.
+   */
+  clearAggregateResult(): void {
+    this.session.finalSignature = null;
+    this.session.verified = false;
+  }
+
   setAggregateResult(signature: string, verified: boolean): void {
     this.session.finalSignature = signature;
     this.session.verified = verified;
     if (verified) {
       this.signatureHistory.push({
         participants: [...this.session.selectedParticipants],
-        signature
+        signature,
+        verified,
+        groupPublicKey: this.session.groupPublicKey
       });
       if (this.signatureHistory.length > 2) {
         this.signatureHistory = this.signatureHistory.slice(-2);

@@ -1,5 +1,5 @@
 import { bytesLabel, ellipsisSafe, escapeHtml, insight } from '../ui/display';
-import type { FrostSession } from '../ui/state';
+import type { FrostHistoryEntry, FrostSession } from '../ui/state';
 
 export const renderSubsetExhibit = (session: FrostSession): string => {
   const cards = session.shares
@@ -51,30 +51,40 @@ export const renderSubsetExhibit = (session: FrostSession): string => {
 };
 
 export const renderAnySubsetExhibit = (
-  previous: { participants: string[]; signature: string } | undefined,
-  latest: { participants: string[]; signature: string } | undefined,
+  previous: FrostHistoryEntry | undefined,
+  latest: FrostHistoryEntry | undefined,
   canRetry: boolean,
   groupPublicKey: string
 ): string => {
   const sameSig = previous && latest && previous.signature === latest.signature;
 
-  const subsetColumn = (
-    label: string,
-    entry: { participants: string[]; signature: string }
-  ): string => `
+  const subsetColumn = (label: string, entry: FrostHistoryEntry): string => {
+    // The tick is the verdict the WASM verifier returned for THIS signature under
+    // THIS key — never a decoration. The key shown is the one the signature was
+    // made under, so a column can never advertise a key the signature fails on.
+    const keyMatches = entry.groupPublicKey === groupPublicKey;
+    const good = entry.verified && keyMatches;
+    return `
     <article class="card subset-col">
       <h3>${label}</h3>
       <p class="subset-signers">${entry.participants.length} signers</p>
       <p class="subset-field-label"><strong>Signature (varies):</strong></p>
       <p class="mono subset-sig">${escapeHtml(entry.signature)}</p>
       <p class="subset-field-label"><strong>Verifies against group key:</strong></p>
-      <p class="mono subset-key">${escapeHtml(groupPublicKey)} <span class="muted">(${bytesLabel(groupPublicKey)})</span></p>
+      <p class="mono subset-key">${escapeHtml(entry.groupPublicKey)} <span class="muted">(${bytesLabel(entry.groupPublicKey)})</span></p>
       <p class="subset-verdict" role="status">
-        <span class="subset-check" aria-hidden="true">✓</span>
-        <span>Valid signature — verifies against this key</span>
+        <span class="subset-check" aria-hidden="true">${good ? '✓' : '✗'}</span>
+        <span>${
+          good
+            ? 'Valid signature — the verifier accepted it against this key'
+            : entry.verified
+              ? 'Made under an earlier group key — not comparable to the current one'
+              : 'The verifier rejected this signature'
+        }</span>
       </p>
     </article>
   `;
+  };
 
   const comparison = previous && latest
     ? `
