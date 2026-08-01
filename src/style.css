@@ -24,6 +24,13 @@
 	--warn-soft: #fef3c7;
 	--surface-1: rgba(255, 255, 255, 0.7);
 	--surface-2: rgba(255, 255, 255, 0.5);
+	/* Control boundaries only. The text input is filled with the same colour as the
+	   .card behind it (1:1) in both themes, so its border is the sole boundary and
+	   WCAG 2.1 SC 1.4.11 requires 3:1. The previous rgba(148,163,184,0.2) / --line
+	   borders resolved to 1.41:1 and 1.23:1. Buttons are brand-gradient filled and
+	   are unaffected; --line stays as-is for decorative card and panel outlines. */
+	--line-control: #576a84;
+	--line-control-light: #7592b8;
 }
 
 * {
@@ -247,7 +254,7 @@ label {
 
 input[type='text'] {
 	width: 100%;
-	border: 1px solid rgba(148, 163, 184, 0.2);
+	border: 1px solid var(--line-control);
 	border-radius: 12px;
 	padding: 0.7rem 0.9rem;
 	font: inherit;
@@ -773,7 +780,7 @@ html[data-theme='light'] .participant {
 
 html[data-theme='light'] input[type='text'] {
 	background-color: var(--card);
-	border-color: var(--line);
+	border-color: var(--line-control-light);
 	color: var(--ink);
 }
 
