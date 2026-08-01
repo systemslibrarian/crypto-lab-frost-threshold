@@ -110,7 +110,7 @@ const render = (): void => {
   const latest = history.length >= 1 ? history[history.length - 1] : undefined;
 
   app.innerHTML = `
-    <main class="shell" id="main-content">
+    <main class="shell" id="main-content" tabindex="-1">
       <header class="cl-hero">
         <button
           id="theme-toggle"
