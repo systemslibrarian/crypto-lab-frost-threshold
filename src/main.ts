@@ -6,6 +6,13 @@ import { renderRound2Exhibit } from './exhibits/round2';
 import { renderAnySubsetExhibit, renderSubsetExhibit } from './exhibits/subset';
 import { renderProgress } from './exhibits/progress';
 import { renderRecap } from './exhibits/recap';
+import { renderAttacksExhibit } from './exhibits/attacks-view';
+import {
+  runNonceReuse,
+  runBindingOmission,
+  type NonceReuseResult,
+  type BindingResult,
+} from './exhibits/attacks';
 import { FrostStateManager, type ParticipantShare } from './ui/state';
 import { wasmAggregate, wasmKeygen, wasmRound1Commit, wasmRound2Sign } from './wasm';
 
@@ -69,6 +76,12 @@ let round1Busy = false;
 let round2Busy = false;
 let aggregateBusy = false;
 let simulateFailure = false;
+
+// Attack exhibits (live, verified by the real Ed25519 verifier).
+let nonceReuseResult: NonceReuseResult | null = null;
+let bindingResult: BindingResult | null = null;
+let nonceAttackBusy = false;
+let bindingAttackBusy = false;
 
 let keygenError: string | null = null;
 let round1Error: string | null = null;
@@ -151,6 +164,7 @@ const render = (): void => {
       ${renderRound2Exhibit(state.value, round2Busy, round2Error)}
       ${renderAggregateExhibit(state.value, simulateFailure, aggregateBusy, aggregateError)}
       ${renderAnySubsetExhibit(previous, latest, state.value.finalSignature !== null, state.value.groupPublicKey)}
+      ${renderAttacksExhibit(nonceReuseResult, bindingResult, nonceAttackBusy, bindingAttackBusy)}
       ${renderRecap(state.value)}
     </main>
   `;
@@ -368,6 +382,34 @@ const bindEvents = (): void => {
       round2Error = error instanceof Error ? error.message : String(error);
     } finally {
       round2Busy = false;
+      render();
+    }
+  });
+
+  const runNonceAttack = async (reuse: boolean): Promise<void> => {
+    nonceAttackBusy = true;
+    render();
+    try {
+      nonceReuseResult = await runNonceReuse(reuse);
+    } finally {
+      nonceAttackBusy = false;
+      render();
+    }
+  };
+  document
+    .querySelector<HTMLButtonElement>('#attack-nonce-reuse')
+    ?.addEventListener('click', () => void runNonceAttack(true));
+  document
+    .querySelector<HTMLButtonElement>('#attack-nonce-control')
+    ?.addEventListener('click', () => void runNonceAttack(false));
+
+  document.querySelector<HTMLButtonElement>('#attack-binding')?.addEventListener('click', async () => {
+    bindingAttackBusy = true;
+    render();
+    try {
+      bindingResult = await runBindingOmission();
+    } finally {
+      bindingAttackBusy = false;
       render();
     }
   });

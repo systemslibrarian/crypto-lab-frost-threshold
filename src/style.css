@@ -1695,3 +1695,56 @@ button:focus-visible {
 		font-size: 0.85rem;
 	}
 }
+
+/* --- Attacks exhibit --- */
+.attack-panel {
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 0.9rem 1rem;
+	margin: 0.9rem 0;
+	background-color: var(--surface-2);
+}
+
+.attack-panel h3 {
+	margin: 0 0 0.4rem;
+	font-size: 1.02rem;
+}
+
+.attack-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0.6rem 0;
+}
+
+button.secondary {
+	background: transparent;
+	color: var(--accent);
+	border: 1px solid var(--accent);
+	box-shadow: none;
+}
+
+.attack-output {
+	margin-top: 0.5rem;
+}
+
+.attack-rows {
+	list-style: none;
+	margin: 0 0 0.6rem;
+	padding: 0;
+	display: grid;
+	gap: 0.3rem;
+}
+
+.attack-rows li {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	justify-content: space-between;
+	border-bottom: 1px solid var(--border);
+	padding-bottom: 0.25rem;
+}
+
+.attack-rows li > span:first-child {
+	color: var(--text-dim);
+}
