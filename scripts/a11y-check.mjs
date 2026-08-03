@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const axeSource = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
-const BASE = process.env.BASE_URL ?? 'http://localhost:4317/crypto-lab-frost-threshold/';
+const BASE = process.env.BASE_URL ?? 'http://localhost:4717/crypto-lab-frost-threshold/';
 
 const runAxe = async (page, label) => {
   await page.evaluate(axeSource);
