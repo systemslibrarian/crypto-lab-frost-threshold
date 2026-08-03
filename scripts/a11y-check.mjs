@@ -53,7 +53,17 @@ const checkHeadingOrder = async (page, label) => {
 // render() and forces a style reflow. (Flipping the attribute directly without a
 // reflow leaves Chromium with stale computed colors under emulated reduced-motion.)
 const toggleTheme = async (page) => {
-  await page.click('#theme-toggle');
+  await page.click('#cl-theme-toggle');
+  // Let the theme repaint finish. reducedMotion only suppresses animations that
+  // honour the media query; plain CSS colour transitions still run, and axe
+  // sampling one mid-blend reports a colour present in neither palette.
+  await page.addStyleTag({
+    content: `*,*::before,*::after{
+      animation-duration:0s!important;animation-delay:0s!important;
+      transition-duration:0s!important;transition-delay:0s!important;
+    }`,
+  });
+  await page.waitForTimeout(120);
 };
 
 const checkOverflow = async (page, label) => {
@@ -95,6 +105,18 @@ const driveFlow = async (page) => {
 };
 
 const browser = await chromium.launch();
+/**
+ * The in-page share-sum check reports success as "✓ … equal the s half …
+ * — summed, not concatenated, and not re-weighted" and failure as "✗ … do not
+ * equal … — something is wrong with this build". It never contained the word
+ * "valid", so the previous /valid/i assertion counted a passing flow as a
+ * failure on every run — two of the three issues this gate reported.
+ */
+const isShareSumOk = (status) =>
+  Boolean(status) &&
+  status.includes('✓') &&
+  !/do not equal|something is wrong/i.test(status);
+
 let failed = 0;
 
 // --- Desktop ---
@@ -108,7 +130,7 @@ let failed = 0;
   failed += (await checkHeadingOrder(page, 'desktop / fresh')).length;
   const verified = await driveFlow(page);
   console.log(`\n[flow @ desktop] final status: "${verified}"`);
-  if (!verified || !/valid/i.test(verified)) failed++;
+  if (!isShareSumOk(verified)) failed++;
   failed += (await runAxe(page, 'desktop / signed')).length;
   failed += (await checkHeadingOrder(page, 'desktop / signed')).length;
   // Light theme (the earlier runs only covered the default dark theme).
@@ -127,7 +149,7 @@ let failed = 0;
   failed += (await runAxe(page, 'mobile / fresh')).length;
   const verified = await driveFlow(page);
   console.log(`\n[flow @ mobile] final status: "${verified}"`);
-  if (!verified || !/valid/i.test(verified)) failed++;
+  if (!isShareSumOk(verified)) failed++;
   failed += (await checkOverflow(page, 'mobile / signed')).length;
   await page.screenshot({ path: 'scripts/shot-mobile.png', fullPage: true });
   await page.close();
