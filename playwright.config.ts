@@ -6,7 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
  * single Chromium project in the dark (default) color scheme.
  */
 
-const PORT = 4223;
+const PORT = 4640;
 const BASE = '/crypto-lab-frost-threshold/';
 
 export default defineConfig({
