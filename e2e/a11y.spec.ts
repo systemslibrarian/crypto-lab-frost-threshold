@@ -16,11 +16,8 @@ import { expect, test, type Page } from '@playwright/test';
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 async function neutralizeMotion(page: Page): Promise<void> {
-  await page.addStyleTag({
-    content:
-      '*, *::before, *::after { animation: none !important; transition: none !important; }\n' +
-      'body { animation: none !important; }',
-  });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.waitForFunction(() => document.getAnimations().every(a => a.playState !== 'running'));
 }
 
 async function revealAll(page: Page): Promise<void> {
@@ -58,11 +55,13 @@ async function runSuite(page: Page): Promise<void> {
 
 test('no WCAG A/AA violations in dark theme', async ({ page }) => {
   await page.goto('.');
+  await expect(page.locator('h1')).toBeVisible();
   await runSuite(page);
 });
 
 test('no WCAG A/AA violations in light theme', async ({ page }) => {
   await page.goto('.');
+  await expect(page.locator('h1')).toBeVisible();
   await page.locator('#cl-theme-toggle').click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await runSuite(page);
