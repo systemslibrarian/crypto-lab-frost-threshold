@@ -24,12 +24,15 @@
 	--warn-soft: #fef3c7;
 	--surface-1: rgba(255, 255, 255, 0.7);
 	--surface-2: rgba(255, 255, 255, 0.5);
-	/* Control boundaries only. The text input is filled with the same colour as the
-	   .card behind it (1:1) in both themes, so its border is the sole boundary and
-	   WCAG 2.1 SC 1.4.11 requires 3:1. The previous rgba(148,163,184,0.2) / --line
-	   borders resolved to 1.41:1 and 1.23:1. Buttons are brand-gradient filled and
-	   are unaffected; --line stays as-is for decorative card and panel outlines. */
-	--line-control: #576a84;
+	/* Control boundaries. WCAG 2.1 SC 1.4.11 requires 3:1 for the visual boundary
+	   of every interactive component, so this token belongs on EVERY control, not
+	   just the text input. Measured from real screenshot pixels: the old #576a84
+	   reached only 2.99:1 against the input's own fill and 2.74:1 against the
+	   .exhibit behind it — under the 3:1 the comment here used to claim. #6d809b
+	   measures 3.84:1 against .exhibit and 4.10:1 against the input fill.
+	   --line stays as-is for decorative card and panel outlines, which are not
+	   control boundaries and carry no 1.4.11 requirement. */
+	--line-control: #6d809b;
 	--line-control-light: #7592b8;
 }
 
@@ -176,7 +179,8 @@ h1 {
 /* cl-hero theme mapping for this demo (not part of managed block):
    the standard uses --text-dim/--border/--accent; map to this demo's vars and
    ensure contrast passes axe in both themes. */
-:root{--text-dim:#94a3b8;--border:var(--line);}
+:root{--text-dim:#94a3b8;--border:rgba(148,163,184,0.15);}
+html[data-theme='light']{--text-dim:var(--muted);--border:var(--line);}
 .cl-hero{position:relative;} /* anchor the absolutely-positioned theme toggle */
 .cl-hero-title{
 	background:linear-gradient(135deg,#e0e7ff,#c7d2fe,#a5b4fc,#818cf8);
@@ -275,7 +279,13 @@ input[type='range'] {
 
 /* --- Buttons --- */
 button {
-	border: none;
+	/* 1.4.11: a filled, borderless button's own fill is its only boundary, and in
+	   the dark theme that fill measures 2.41:1 against .exhibit (screenshot
+	   pixels: #5248d7 on #1a2439). The gradient cannot simply be lightened — the
+	   luminance window that clears 3:1 against the panel while keeping white
+	   label text at 4.5:1 is narrower than the ::after gloss overlay alone spans.
+	   So the boundary is drawn explicitly instead. */
+	border: 1px solid var(--line-control);
 	border-radius: 12px;
 	padding: 0.6rem 1.2rem;
 	/* Deeper indigo pair than plain --brand: white text clears 4.5:1 across
@@ -357,10 +367,16 @@ button:disabled {
 	margin: 1rem 0;
 }
 
+/* `background`, not `background-color`. `button` sets the brand gradient through
+   the background SHORTHAND, which also sets background-image; overriding only
+   background-color leaves that gradient painting on top, so every signer card
+   rendered as a primary indigo button in both themes. In the light theme that
+   put --ink (#0f172a) and --brand-dark (#4f46e5) text on it at 2.50:1 and
+   1.12:1. The ::after gloss `button` adds came along for the same ride. */
 .participant {
 	text-align: left;
-	border: 1px solid rgba(148, 163, 184, 0.15);
-	background-color: rgba(15, 23, 42, 0.4);
+	border: 1px solid var(--line-control);
+	background: rgba(15, 23, 42, 0.4);
 	color: #e2e8f0;
 	display: grid;
 	gap: 0.35rem;
@@ -370,8 +386,14 @@ button:disabled {
 	transition: all 0.25s ease;
 }
 
+.participant::after {
+	display: none;
+}
+
+/* rgba(99,102,241,0.3) resolved to 1.49:1 against the card in both themes —
+   a hover state must not be a WORSE boundary than the resting one. */
 .participant:hover:not(:disabled) {
-	border-color: rgba(99, 102, 241, 0.3);
+	border-color: var(--brand);
 }
 
 .participant.selected {
@@ -388,8 +410,11 @@ button:disabled {
 	color: #a5b4fc;
 }
 
+/* #8893a7 measured 4.14:1 on .agg-sum and 4.31-4.49:1 across .exhibit — under
+   4.5:1 everywhere it is used. #9aa6ba measures 5.21:1 and 5.39:1 on the same
+   two surfaces. The light theme overrides this to --muted further down. */
 .muted {
-	color: #8893a7;
+	color: #9aa6ba;
 }
 
 .warning {
@@ -522,7 +547,9 @@ details summary:hover {
 	justify-content: center;
 	font-size: 0.85rem;
 	font-weight: 700;
-	border: 2px solid rgba(148, 163, 184, 0.3);
+	/* 1.4.11: the dot is the progress graphic. rgba(148,163,184,0.3) measured
+	   1.47:1 against the panel; --line-control measures 3.84:1. */
+	border: 2px solid var(--line-control);
 	background-color: rgba(15, 23, 42, 0.85);
 	color: #94a3b8;
 	transition: all 0.3s ease;
@@ -531,7 +558,9 @@ details summary:hover {
 .progress-step.is-done .progress-dot {
 	/* Darker indigo->cyan pair: white text on #06b6d4 is only 2.43:1 */
 	background: linear-gradient(135deg, var(--brand-dark), #0e7490);
-	border-color: transparent;
+	/* Not `transparent`: the filled dot measured 2.73:1 against the panel behind
+	   it in the dark theme, so with no border its extent fell under 1.4.11. */
+	border-color: var(--line-control);
 	color: #fff;
 }
 
@@ -778,9 +807,21 @@ html[data-theme='light'] .participant {
 	color: var(--ink);
 }
 
+html[data-theme='light'] #app input[type='text'],
+html[data-theme='light'] #app button,
+html[data-theme='light'] #app .participant {
+	border-color: var(--line-control-light);
+}
+
+/* The selected signer's border is a state cue, and the rule above would have
+   flattened it back to the resting boundary in the light theme. --brand
+   measures 4.47:1 against the white card. */
+html[data-theme='light'] #app .participant.selected {
+	border-color: var(--brand);
+}
+
 html[data-theme='light'] input[type='text'] {
 	background-color: var(--card);
-	border-color: var(--line-control-light);
 	color: var(--ink);
 }
 
@@ -835,7 +876,7 @@ html[data-theme='light'] .recap-live .mono {
 
 html[data-theme='light'] .progress-dot {
 	background-color: #fff;
-	border-color: var(--line);
+	border-color: var(--line-control-light);
 	color: var(--muted);
 }
 
@@ -949,8 +990,9 @@ html[data-theme='light'] .viz-lead {
 	flex-wrap: wrap;
 }
 
+/* 1.83:1 against .viz-details and 1.92:1 against its own fill, measured. */
 .sp-btn {
-	border: 1px solid rgba(148, 163, 184, 0.35);
+	border: 1px solid var(--line-control);
 	background: rgba(15, 23, 42, 0.5);
 	color: #c3cddd;
 	border-radius: 10px;
@@ -972,17 +1014,24 @@ html[data-theme='light'] .viz-lead {
 
 .sp-btn-on {
 	background: linear-gradient(135deg, var(--brand-dark), #0e7490);
-	border-color: transparent;
+	border-color: var(--line-control);
 	color: #fff;
 }
 
 html[data-theme='light'] .sp-btn {
 	background: #fff;
-	border-color: var(--line);
+	border-color: var(--line-control-light);
 	color: var(--brand-dark);
 }
 
+/* This rule used to set `color: #fff` ONLY. `html[data-theme='light'] .sp-btn`
+   above is the same specificity and sets `background: #fff`, so the pressed
+   toggle rendered white-on-white: 1:1, its label invisible and its state
+   indistinguishable from the unpressed one. The fill has to be restored here,
+   not just the ink. */
 html[data-theme='light'] .sp-btn-on {
+	background: linear-gradient(135deg, var(--brand-dark), #0e7490);
+	border-color: transparent;
 	color: #fff;
 }
 
@@ -1697,17 +1746,43 @@ button:focus-visible {
 }
 
 /* --- Attacks exhibit --- */
+/* --surface-2 is rgba(255,255,255,0.5) — authored for the lab's own round theme
+   toggle, which the shared header now hides. Reused here it painted a near-white
+   slab in the middle of the dark page, and every ink inside it was chosen for a
+   dark backdrop: "Not run yet." landed at 1.03:1, the .insight body at 1.71:1,
+   the secondary button at 1.22:1. This panel now uses the same surface as .card,
+   which is what it visually is. */
 .attack-panel {
-	border: 1px solid var(--border);
+	border: 1px solid rgba(148, 163, 184, 0.15);
 	border-radius: 12px;
 	padding: 0.9rem 1rem;
 	margin: 0.9rem 0;
-	background-color: var(--surface-2);
+	background-color: rgba(15, 23, 42, 0.4);
 }
 
+/* These two inherited `color: var(--ink)` from <body>, which only ever read as
+   text because the panel behind them was near-white. */
 .attack-panel h3 {
 	margin: 0 0 0.4rem;
 	font-size: 1.02rem;
+	color: #cbd5e1;
+}
+
+.attack-panel > p {
+	color: #94a3b8;
+}
+
+html[data-theme='light'] .attack-panel {
+	background-color: var(--card);
+	border-color: var(--line);
+}
+
+html[data-theme='light'] .attack-panel h3 {
+	color: var(--ink);
+}
+
+html[data-theme='light'] .attack-panel > p {
+	color: var(--muted);
 }
 
 .attack-actions {
@@ -1722,6 +1797,17 @@ button.secondary {
 	color: var(--accent);
 	border: 1px solid var(--accent);
 	box-shadow: none;
+}
+
+/* --accent (#06b6d4) is declared once in :root and never re-stated for the light
+   theme. On the white light-theme panel it measures 2.43:1 as label ink (needs
+   4.5:1) and 2.43:1 as the button's only boundary (needs 3:1 under 1.4.11).
+   #0e7490 measures 5.36:1 for both. */
+/* Scoped with #app to outrank the blanket light-theme control-border rule,
+   which is itself #app-scoped so it cannot reach the shared header bar. */
+html[data-theme='light'] #app button.secondary {
+	color: #0e7490;
+	border-color: #0e7490;
 }
 
 .attack-output {

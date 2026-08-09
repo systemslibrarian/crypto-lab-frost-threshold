@@ -1,68 +1,53 @@
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { test } from '@playwright/test';
+import { boot, driveAllStates, NARROW, reportCollected } from './gate';
 
 /**
- * WCAG regression gate. Deploys are already gated on the FROST RFC 9591 test
- * vectors; this gates them on accessibility the same way. Scans the full page
- * in both themes with every collapsible / hidden region revealed.
+ * WCAG A/AA gate.
  *
- * The app renders a fixed set of exhibits up front (keygen, subset, round 1,
- * round 2, aggregate, recap). Detail bodies live in <details>, and some regions
- * are hidden inline. Before scanning we open every <details>, clear inline
- * display:none, and neutralize animations/transitions so axe never samples a
- * mid-fade color.
+ * Deploys are already gated on the FROST RFC 9591 test vectors; this gates them
+ * on accessibility the same way — but honestly. Four configurations, {dark,
+ * light} x {1280, 380}, each driven through the whole protocol rather than
+ * scanned once at first paint.
+ *
+ * Reduced motion is EMULATED, never injected: the page's own
+ * `@media (prefers-reduced-motion: reduce)` block is exercised, not bypassed,
+ * so a `rise`/`slideIn` keyframe that the block cancels without restoring its
+ * `opacity: 1` end state is caught by `expectNotBlank` instead of being papered
+ * over by an injected `animation: none`.
  */
 
-const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
-
-async function neutralizeMotion(page: Page): Promise<void> {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.waitForFunction(() => document.getAnimations().every(a => a.playState !== 'running'));
-}
-
-async function revealAll(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    for (const details of document.querySelectorAll('details')) {
-      (details as HTMLDetailsElement).open = true;
-    }
-    // Reveal any inline display:none region so its contents are scanned.
-    for (const el of document.querySelectorAll<HTMLElement>('[style*="display"]')) {
-      if (el.style && el.style.display === 'none') el.style.display = '';
-    }
-    // Drop [hidden] so hidden panels are visible to axe.
-    for (const el of document.querySelectorAll<HTMLElement>('[hidden]')) {
-      el.removeAttribute('hidden');
-    }
+test.describe('WCAG A/AA gate', () => {
+  test.beforeEach(({ page }) => {
+    page.setDefaultTimeout(20_000);
   });
-}
 
-async function scan(page: Page): Promise<void> {
-  const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
-  const summary = results.violations.map((v) => ({
-    id: v.id,
-    impact: v.impact,
-    help: v.help,
-    nodes: v.nodes.map((n) => n.target.join(' ')).slice(0, 5),
-  }));
-  expect(summary).toEqual([]);
-}
+  test.afterAll(() => {
+    reportCollected();
+  });
 
-async function runSuite(page: Page): Promise<void> {
-  await revealAll(page);
-  await neutralizeMotion(page);
-  await scan(page);
-}
+  test('dark theme, desktop width', async ({ page }) => {
+    test.slow();
+    await boot(page, 'dark');
+    await driveAllStates(page, 'dark @1280');
+  });
 
-test('no WCAG A/AA violations in dark theme', async ({ page }) => {
-  await page.goto('.');
-  await expect(page.locator('h1')).toBeVisible();
-  await runSuite(page);
-});
+  test('light theme, desktop width', async ({ page }) => {
+    test.slow();
+    await boot(page, 'light');
+    await driveAllStates(page, 'light @1280');
+  });
 
-test('no WCAG A/AA violations in light theme', async ({ page }) => {
-  await page.goto('.');
-  await expect(page.locator('h1')).toBeVisible();
-  await page.locator('#cl-theme-toggle').click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await runSuite(page);
+  test('dark theme, 380px reflow width', async ({ page }) => {
+    test.slow();
+    await page.setViewportSize(NARROW);
+    await boot(page, 'dark');
+    await driveAllStates(page, 'dark @380');
+  });
+
+  test('light theme, 380px reflow width', async ({ page }) => {
+    test.slow();
+    await page.setViewportSize(NARROW);
+    await boot(page, 'light');
+    await driveAllStates(page, 'light @380');
+  });
 });

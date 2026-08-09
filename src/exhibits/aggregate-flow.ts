@@ -171,7 +171,11 @@ export const renderAggregateFlow = (session: FrostSession): string => {
           <p class="agg-col-title">Signature shares (public)</p>
           <ul class="agg-lanes">${laneRows}</ul>
         </div>
-        <div class="agg-sum" aria-label="Summed into the final signature scalar">
+        <!-- role="group" is load-bearing: aria-label on a role-less div is
+             PROHIBITED by ARIA and silently discarded, so this box had no
+             accessible name at all. axe files that under "incomplete", never
+             "violations", which is why a violations-only gate never saw it. -->
+        <div class="agg-sum" role="group" aria-label="Summed into the final signature scalar">
           <div class="agg-sum-symbol" aria-hidden="true">Σ</div>
           ${finalCell}
         </div>
