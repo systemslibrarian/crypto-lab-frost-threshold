@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { boot, driveAllStates, NARROW, reportCollected } from './gate';
+import { boot, driveAllStates, expectBaselineNotStale, NARROW, reportCollected } from './gate';
 
 /**
  * WCAG A/AA gate.
@@ -29,12 +29,21 @@ test.describe('WCAG A/AA gate', () => {
     test.slow();
     await boot(page, 'dark');
     await driveAllStates(page, 'dark @1280');
+
+    // The third ratchet rule — a baselined finding that no longer appears must
+    // be deleted, so the list can only shrink. `expectBaselineNotStale` was
+    // exported from `gate.ts` and imported by nothing, so it had never run.
+    // Called in all four configurations, which this lab's baseline permits: all
+    // five entries are produced by all four drives, confirmed through the
+    // gate's own capture path rather than assumed.
+    expectBaselineNotStale();
   });
 
   test('light theme, desktop width', async ({ page }) => {
     test.slow();
     await boot(page, 'light');
     await driveAllStates(page, 'light @1280');
+    expectBaselineNotStale();
   });
 
   test('dark theme, 380px reflow width', async ({ page }) => {
@@ -42,6 +51,7 @@ test.describe('WCAG A/AA gate', () => {
     await page.setViewportSize(NARROW);
     await boot(page, 'dark');
     await driveAllStates(page, 'dark @380');
+    expectBaselineNotStale();
   });
 
   test('light theme, 380px reflow width', async ({ page }) => {
@@ -49,5 +59,6 @@ test.describe('WCAG A/AA gate', () => {
     await page.setViewportSize(NARROW);
     await boot(page, 'light');
     await driveAllStates(page, 'light @380');
+    expectBaselineNotStale();
   });
 });
