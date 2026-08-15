@@ -38,8 +38,24 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # The FROST protocol itself lives in the Rust crate, and its tests are
+      # the only thing that checks it: 2-of-3 / 3-of-5 / 5-of-5 pipelines,
+      # under-threshold aggregation failing, a wrong commitment list being
+      # rejected, tampered messages not verifying, distinct subsets producing
+      # distinct valid signatures, and the output verifying against an
+      # independent ed25519 verifier. No npm script runs them, so before this
+      # step nothing in CI or deploy did — a crate whose threshold signing was
+      # broken compiled to WASM and published.
+      - name: Crate tests (FROST protocol)
+        run: cargo test --manifest-path crate/Cargo.toml
+
       - name: Build WASM
         run: npm run wasm
+
+      # The vitest suite over the attack exhibits. Deploy previously ran only
+      # test:a11y, so this never gated a publish either.
+      - name: Unit tests
+        run: npm test
 
       - name: Build site
         run: npm run build
