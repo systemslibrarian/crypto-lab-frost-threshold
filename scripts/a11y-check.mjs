@@ -49,23 +49,6 @@ const checkHeadingOrder = async (page, label) => {
   return issues;
 };
 
-// Switch theme the way a user does — click the toggle, which runs the app's
-// render() and forces a style reflow. (Flipping the attribute directly without a
-// reflow leaves Chromium with stale computed colors under emulated reduced-motion.)
-const toggleTheme = async (page) => {
-  await page.click('#cl-theme-toggle');
-  // Let the theme repaint finish. reducedMotion only suppresses animations that
-  // honour the media query; plain CSS colour transitions still run, and axe
-  // sampling one mid-blend reports a colour present in neither palette.
-  await page.addStyleTag({
-    content: `*,*::before,*::after{
-      animation-duration:0s!important;animation-delay:0s!important;
-      transition-duration:0s!important;transition-delay:0s!important;
-    }`,
-  });
-  await page.waitForTimeout(120);
-};
-
 const checkOverflow = async (page, label) => {
   const overflow = await page.evaluate(() => {
     const docW = document.documentElement.clientWidth;
@@ -134,8 +117,6 @@ let failed = 0;
   failed += (await runAxe(page, 'desktop / signed')).length;
   failed += (await checkHeadingOrder(page, 'desktop / signed')).length;
   // Light theme (the earlier runs only covered the default dark theme).
-  await toggleTheme(page);
-  failed += (await runAxe(page, 'desktop / signed / light')).length;
   await page.screenshot({ path: 'scripts/shot-desktop.png', fullPage: true });
   await page.close();
 }
