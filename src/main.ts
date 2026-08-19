@@ -21,8 +21,6 @@ if (!app) {
   throw new Error('Missing #app element');
 }
 
-type ThemeMode = 'dark' | 'light';
-
 type KeygenResult = {
   group_public_key: string;
   shares: Array<{
@@ -55,19 +53,6 @@ type AggregateResult = {
 };
 
 const state = new FrostStateManager();
-
-const getThemeMode = (): ThemeMode =>
-  document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-
-const setThemeMode = (theme: ThemeMode): void => {
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
-};
-
-const getThemeToggleMeta = (theme: ThemeMode): { icon: string; ariaLabel: string } =>
-  theme === 'dark'
-    ? { icon: '🌙', ariaLabel: 'Switch to light mode' }
-    : { icon: '☀️', ariaLabel: 'Switch to dark mode' };
 
 let messageText = 'Hello from FROST';
 let shamirRevealAll = false;
@@ -116,8 +101,6 @@ const render = (): void => {
     caret = { start: active.selectionStart, end: active.selectionEnd ?? active.selectionStart };
   }
 
-  const themeMode = getThemeMode();
-  const toggleMeta = getThemeToggleMeta(themeMode);
   const history = state.signatureHistory;
   const previous = history.length >= 2 ? history[0] : undefined;
   const latest = history.length >= 1 ? history[history.length - 1] : undefined;
@@ -125,13 +108,6 @@ const render = (): void => {
   app.innerHTML = `
     <main class="shell" id="main-content" tabindex="-1">
       <header class="cl-hero">
-        <button
-          id="theme-toggle"
-          class="theme-toggle"
-          type="button"
-          aria-label="${toggleMeta.ariaLabel}"
-          title="${toggleMeta.ariaLabel}"
-        >${toggleMeta.icon}</button>
         <div class="cl-hero-main">
           <h1 class="cl-hero-title">FROST</h1>
           <p class="cl-hero-sub">t-of-n Threshold Schnorr &middot; Ed25519 &middot; RFC 9591</p>
@@ -187,13 +163,6 @@ const render = (): void => {
 };
 
 const bindEvents = (): void => {
-  const themeToggle = document.querySelector<HTMLButtonElement>('#theme-toggle');
-  themeToggle?.addEventListener('click', () => {
-    const nextTheme: ThemeMode = getThemeMode() === 'dark' ? 'light' : 'dark';
-    setThemeMode(nextTheme);
-    render();
-  });
-
   const nSlider = document.querySelector<HTMLInputElement>('#n-slider');
   const tSlider = document.querySelector<HTMLInputElement>('#t-slider');
   const nValue = document.querySelector<HTMLSpanElement>('#n-value');
