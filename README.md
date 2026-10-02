@@ -54,7 +54,11 @@ No environment variables are required for local development.
 
 ## What It Teaches
 The demo walks the protocol end to end and proves four things with live values you generate yourself:
-- **The key is shared, never whole.** Key generation splits one Ed25519 key with Verifiable Secret Sharing. No participant — and crucially no aggregator — ever holds the full signing key. Aggregation runs on *public verifying shares*, and the code enforces that secrets never reach it.
+- **The key is shared, never whole — as a property of the PROTOCOL, which is what this page demonstrates.** Key generation splits one Ed25519 key with Verifiable Secret Sharing. In FROST no participant, and crucially no aggregator, ever holds the full signing key: aggregation runs on *public verifying shares*, and the code enforces that secrets never reach it.
+
+  **What this page does not demonstrate is isolation, and it cannot.** `frost_keygen` is a trusted dealer running in your browser, and it returns every participant's secret share to the one page you are reading — see `KeygenOutput.shares` in `crate/src/keygen.rs`, where each share carries its `secret` as hex. That page therefore holds enough material to reconstruct the key at any moment, whatever the protocol says, and the only reason it does not is that it chooses not to. A real deployment has each share generated and held somewhere the others cannot reach, which is the point of distributed key generation (see Limitations).
+
+  So the signature is real and the roles are real; the boundaries between participants are drawn, not enforced. The cross-verification against `ed25519-dalek` establishes that the signature is correct, and tests nothing about isolation.
 - **Any *t* signers suffice, with no special roles.** Pick any threshold-sized subset; which signers you choose is irrelevant.
 - **A share is not a signature.** Round 2 yields 32-byte partial shares that are useless alone; only aggregation produces a real signature. Two 32-byte shares are *summed into one 32-byte scalar s* (not concatenated); the final 64-byte signature is the pair (R, s).
 - **The result is indistinguishable from solo signing.** The output is an ordinary 64-byte Ed25519 signature that any standard verifier accepts. (The test suite cross-verifies it with the independent `ed25519-dalek` library.)

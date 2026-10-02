@@ -14,15 +14,17 @@ export const renderRecap = (session: FrostSession): string => {
     ? `<p class="recap-live">
          You just produced a valid <strong>${threshold}-of-${numParticipants}</strong> signature with
          <strong>${signers}</strong> signers. It is a standard 64-byte Ed25519 signature
-         (<span class="mono">${escapeHtml(session.finalSignature ?? '')}</span>) and the secret key
-         was never assembled at any point.
+         (<span class="mono">${escapeHtml(session.finalSignature ?? '')}</span>) and no step above
+         assembled the secret key. Note what that does and does not say: the protocol
+         never needs the whole key, and this page nevertheless holds every share,
+         because the dealer that split the key runs here. See the note below.
        </p>`
     : `<p class="muted">Run the full flow above to produce a live signature, then come back here.</p>`;
 
   const takeaways = [
     [
-      'The key is shared, never whole',
-      'Key generation splits one Ed25519 key into <em>n</em> shares using Verifiable Secret Sharing. No participant — and no aggregator — ever holds the full signing key.'
+      'The key is shared, never whole — in the protocol',
+      'Key generation splits one Ed25519 key into <em>n</em> shares using Verifiable Secret Sharing. In FROST no participant, and no aggregator, ever holds the full signing key. <strong>This page is not an example of that.</strong> Its dealer runs in your browser and hands every secret share to this one page, so the separation you see between participants is drawn here rather than enforced. A deployment gets that separation from distributed key generation, where no party ever sees another\'s share.'
     ],
     [
       'Any t signers suffice — no special roles',
