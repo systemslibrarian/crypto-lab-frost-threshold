@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "deploy": "npm run build && gh-pages -d dist",
+    "deploy": "gh workflow run deploy.yml --repo systemslibrarian/crypto-lab-frost-threshold --ref main",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run && node --test tests/publish-request.test.mjs",
     "test:a11y": "playwright test",
     "wasm": "PATH=$HOME/.cargo/bin:$PATH wasm-pack build crate --target web --out-dir ../pkg",
     "verify:a11y": "vite preview --port 4400 --strictPort & VP=$!; for i in $(seq 1 20); do curl -sf http://localhost:4400/crypto-lab-frost-threshold/ >/dev/null && break; sleep 1; done; BASE_URL=http://localhost:4400/crypto-lab-frost-threshold/ node scripts/a11y-check.mjs; R=$?; kill $VP; exit $R"
@@ -18,15 +18,14 @@
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.4",
-    "autoprefixer": "^10.6.1",
     "axe-core": "^4.14.0",
-    "gh-pages": "^6.3.0",
     "playwright": "^1.62.1",
     "postcss": "^8.5.29",
-    "tailwindcss": "^3.4.13",
+    "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",
     "vite": "^8.3.2",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "@tailwindcss/postcss": "^4.3.3"
   },
   "dependencies": {
     "@noble/curves": "^2.4.0"
