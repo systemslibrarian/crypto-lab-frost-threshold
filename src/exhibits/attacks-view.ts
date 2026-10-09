@@ -37,21 +37,25 @@ const renderBinding = (r: BindingResult | null): string => {
     <ul class="attack-rows">
       <li><span>Correct FROST aggregate (binding folded into R)</span>
         <span class="${r.boundVerified ? 'verified' : 'error'}" data-verdict="bound">${r.boundVerified ? 'ACCEPTED ✓' : 'rejected'}</span></li>
-      <li><span>Binding factor skipped at aggregation (ρ<sub>i</sub> = 1)</span>
+      <li><span>Only R replaced; original honest response z retained</span>
         <span class="${r.unboundVerified ? 'error' : 'verified'}" data-verdict="unbound">${r.unboundVerified ? 'accepted' : 'REJECTED ✓'}</span></li>
+      <li><span>Consistent ρ<sub>i</sub> = 1 honest-signing control</span>
+        <span class="${r.honestUnboundVerified ? 'verified' : 'error'}" data-verdict="honest-unbound">${r.honestUnboundVerified ? 'ACCEPTED ✓' : 'rejected'}</span></li>
+      <li><span>Original R | z</span><span class="mono">${short(r.boundSignatureHex.slice(0, 64))} | ${short(r.boundSignatureHex.slice(64))}</span></li>
+      <li><span>Altered R | same z</span><span class="mono">${short(r.alteredSignatureHex.slice(0, 64))} | ${short(r.alteredSignatureHex.slice(64))}</span></li>
     </ul>
     <p class="${!r.unboundVerified && r.boundVerified ? 'verified' : 'error'}" role="status">
-      The RFC 9591 binding factor ρ<sub>i</sub> = H(i, msg, commitments) is a load-bearing term
-      in the signature the verifier checks. Drop it at aggregation and the real Ed25519 verifier
-      rejects — the same term that closes the Drijvers/Benhamouda concurrent-signing (ROS) attack.
+      The binding transcript includes the group public key, separately hashed message and
+      ordered commitments, then the participant identifier (RFC 9591 §§4.4 and 6.1).
+      Replacing only R makes it inconsistent with the unchanged response z, so verification fails.
+      Consistent unbound honest signing can still verify. This experiment does not mount a
+      concurrent Drijvers/ROS forgery or establish security for that unbound protocol.
     </p>`;
 };
 
 /**
- * "Attacks the design defends against" — mounts the two named FROST failure
- * modes as live, computed exhibits verified by the real @noble/curves Ed25519
- * verifier. Small (default 2-of-3) group so the algebra stays legible; the
- * cryptography is genuine.
+ * A nonce-reuse attack and a separate equation-consistency experiment.
+ * Actual Ed25519 verification is distinct from protocol-transcript conformance.
  */
 export const renderAttacksExhibit = (
   nonceReuse: NonceReuseResult | null,
@@ -60,11 +64,11 @@ export const renderAttacksExhibit = (
   bindingBusy: boolean,
 ): string => `
   <section class="exhibit attacks">
-    <h2><span class="step-badge" aria-hidden="true">⚔</span> Attacks the design defends against</h2>
+    <h2><span class="step-badge" aria-hidden="true">⚔</span> Nonce attack and binding consistency</h2>
     <p>
-      Both run for real on a small <strong>2-of-3 FROST(Ed25519)</strong> group built in your browser
-      (toy scale, so the algebra is legible) and every verdict comes from the actual Ed25519 verifier
-      — nothing is asserted from prose.
+      These separate TypeScript experiments use a small <strong>2-of-3 group</strong> built in your
+      browser. The binding transcript has RFC 9591 known-answer tests, and verdicts come from
+      an Ed25519 verifier. The main signing walkthrough uses the separate Rust/WASM FROST path.
     </p>
 
     <div class="attack-panel">
@@ -83,14 +87,15 @@ export const renderAttacksExhibit = (
     </div>
 
     <div class="attack-panel">
-      <h3>2 · Skipping the nonce-commitment binding factor</h3>
+      <h3>2 · Binding-term consistency check</h3>
       <p>
-        The same honest signing shares are aggregated two ways: correctly, with each signer's binding
-        factor folded into the group commitment R, and with the binding factor skipped. The real Ed25519
-        verifier accepts the first and rejects the second.
+        Sign once with the RFC binding transcript, preserve the exact response sum z, then replace
+        only the group commitment R with the unweighted sum. The real Ed25519 verifier accepts
+        the original signature and rejects the mismatched one. A separate honest control uses
+        ρ = 1 consistently in both commitments and responses; it is not an attack-security claim.
       </p>
       <div class="attack-actions">
-        <button id="attack-binding" ${bindingBusy ? 'disabled' : ''}>Aggregate with vs. without binding</button>
+        <button id="attack-binding" ${bindingBusy ? 'disabled' : ''}>Run binding consistency controls</button>
       </div>
       <div id="attack-binding-output" class="attack-output">${renderBinding(binding)}</div>
     </div>

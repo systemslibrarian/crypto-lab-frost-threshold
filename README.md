@@ -20,10 +20,10 @@ Several steps now include diagrams of the mechanism, not just hex: an interactiv
 
 ## What Can Go Wrong
 
-Both of the first two are now **mounted live** in the "Attacks the design defends against" exhibit, on a small (2-of-3) real FROST(Ed25519) group, with every verdict coming from the actual `@noble/curves` Ed25519 verifier — not prose.
+The "Nonce attack and binding consistency" section contains a live nonce-reuse attack and a separate binding-equation experiment on a small 2-of-3 group. Both use actual `@noble/curves` Ed25519 verification; that verifies the signature equation rather than every internal protocol or security property.
 
 - **Nonce reuse across signing attempts.** Reusing a per-signature nonce, or producing two signatures from the same Round 1 commitment, can leak signing-share secrets — the same class of failure that breaks single-party Schnorr/Ed25519. *Live:* reuse the Round-1 nonces across three sessions and the exhibit solves a 3×3 linear system per signer, recovers the exact group secret, forges an arbitrary message, and the real Ed25519 verifier accepts it. With fresh nonces (the control) the forgery is rejected.
-- **Skipping nonce-commitment binding.** FROST binds each nonce commitment into the challenge specifically to defend against the Drijvers-style attacks on naive multi-signatures; omitting the binding factor reopens those attacks. *Live:* the same honest signing shares are aggregated with the RFC 9591 binding factor (accepted) and with it dropped (rejected), showing the term is load-bearing in the verified signature.
+- **Binding-term consistency.** The separate TypeScript experiment signs with the RFC 9591 binding transcript, retains the exact honest response sum `z`, and replaces only the group commitment `R` with an unweighted commitment sum. The original signature verifies and the mismatched equation fails. A separate, consistently defined `ρ = 1` honest-signing control still verifies. This is **not a concurrent Drijvers/ROS forgery demonstration**, and honest acceptance does not establish that unbound protocol's security. Published Appendix E.1 tests check the binding inputs, factors, response shares and final signature; Ed25519 acceptance alone does not prove transcript conformance. The main Rust/WASM signing path remains separate.
 - **Trusted-dealer key generation is a single point of trust.** This demo uses a trusted dealer; a real deployment usually wants a distributed key generation so no one party ever sees the full key.
 - **Wrong threshold or insufficient shares.** Supplying fewer than t shares cannot produce a valid signature; mismatched participant sets or indices yield aggregation that fails verification.
 - **Weak randomness for nonces.** Predictable Round 1 nonces undermine the whole scheme, since Schnorr security rests on unique, unpredictable nonces.
@@ -70,3 +70,9 @@ A progress tracker, per-step "why it matters" callouts, in-step diagrams (Shamir
 *Part of the [Crypto Lab](https://crypto-lab.systemslibrarian.dev/) suite.*
 
 *"So whether you eat or drink or whatever you do, do it all for the glory of God." — 1 Corinthians 10:31*
+
+## Publishing and build requirements
+
+Use Node24 and run `npm ci`, `cargo test --manifest-path crate/Cargo.toml`, and `npm run wasm` before TypeScript checks or the site build. The generated `pkg` module is a prerequisite; a missing module is not a failing protocol test. Tailwind4 styling requires Safari16.4+, Chrome111+ or Firefox128+.
+
+`npm run deploy` requests the existing gated `deploy.yml` workflow for remote `main`; it does not upload local files. A queued request is not proof of deployment. Confirm the workflow and public site separately. The main Rust/WASM implementation is unchanged by the exhibit and CSS repairs; this build does not establish reproducibility of a previously distributed WASM binary.

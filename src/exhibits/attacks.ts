@@ -1,5 +1,5 @@
 /**
- * attacks.ts — the two failure modes the page names, mounted for real against
+ * attacks.ts — nonce-reuse attack and binding-term consistency experiment against
  * the actual @noble/curves Ed25519 verifier (RFC 8032). FROST(Ed25519) emits
  * ordinary Ed25519 signatures, so a correctly built aggregate here verifies
  * with the same `ed25519.verify` any RFC 8032 implementation would use, and a
@@ -22,13 +22,10 @@
  *   nonces per session (the control) the recovered key is wrong and the forgery
  *   is REJECTED.
  *
- *   Attack 2 — Skipping the nonce-commitment binding factor. RFC 9591 folds a
- *   per-signer binding factor ρ_i = H(i, msg, commitments) into the group
- *   commitment R = Σ (D_i + ρ_i·E_i); this is the term that defends against
- *   Drijvers/Benhamouda concurrent (ROS) attacks. It is load-bearing in the
- *   signature the verifier checks: build the aggregate correctly and Ed25519
- *   ACCEPTS; drop the binding factor at aggregation (ρ_i = 1) while the signers'
- *   responses still carried it and the real verifier REJECTS.
+ *   Experiment 2 — Binding-term consistency. Keep the actual honest response
+ *   scalar z unchanged and replace only R with Σ(D_i + E_i). The verifier
+ *   rejects this mismatched equation. A consistently defined rho=1 control
+ *   with honest signers verifies; neither branch mounts a concurrent ROS forgery.
  */
 
 import { ed25519 } from '@noble/curves/ed25519.js';
@@ -141,17 +138,47 @@ interface NoncePair {
   e: bigint;
 }
 
-/** RFC 9591 binding factor ρ_i = H(i ‖ msg ‖ commitment-list) mod L. */
-async function bindingFactor(
+/** RFC 9591 §§4.3, 4.4, 6.1: PK || H4(msg) || H5(commitments) || id. */
+export async function bindingFactorInput(
   id: bigint,
+  publicKey: Uint8Array,
+  message: Uint8Array,
+  commitments: { id: bigint; D: Uint8Array; E: Uint8Array }[],
+): Promise<Uint8Array> {
+  if (publicKey.length !== 32 || id <= 0n || id >= L || commitments.length === 0) {
+    throw new Error('Invalid FROST binding transcript');
+  }
+  let previous = 0n;
+  const encoded = new Uint8Array(commitments.length * 96);
+  for (const [index, c] of commitments.entries()) {
+    if (c.id <= previous || c.id >= L || c.D.length !== 32 || c.E.length !== 32) {
+      throw new Error('Commitments require distinct ascending nonzero identifiers and 32-byte points');
+    }
+    previous = c.id;
+    encoded.set(bigToLe32(c.id), index * 96);
+    encoded.set(c.D, index * 96 + 32);
+    encoded.set(c.E, index * 96 + 64);
+  }
+  if (!commitments.some(c => c.id === id)) throw new Error('Participant absent from commitment list');
+  const context = enc('FROST-ED25519-SHA512-v1');
+  const messageHash = await sha512(context, enc('msg'), message);
+  const commitmentHash = await sha512(context, enc('com'), encoded);
+  const input = new Uint8Array(192);
+  input.set(publicKey);
+  input.set(messageHash, 32);
+  input.set(commitmentHash, 96);
+  input.set(bigToLe32(id), 160);
+  return input;
+}
+
+export async function bindingFactor(
+  id: bigint,
+  publicKey: Uint8Array,
   message: Uint8Array,
   commitments: { id: bigint; D: Uint8Array; E: Uint8Array }[],
 ): Promise<bigint> {
-  const parts: Uint8Array[] = [enc('FROST-rho'), bigToLe32(id), message];
-  for (const c of commitments) {
-    parts.push(bigToLe32(c.id), c.D, c.E);
-  }
-  return mod(leToBig(await sha512(...parts)));
+  const input = await bindingFactorInput(id, publicKey, message, commitments);
+  return mod(leToBig(await sha512(enc('FROST-ED25519-SHA512-v1'), enc('rho'), input)));
 }
 
 export interface SessionOutput {
@@ -170,41 +197,41 @@ export interface SessionOutput {
 
 /**
  * One honest FROST(Ed25519) signing session over the given signer set with the
- * supplied nonces. `dropBinding` reproduces attack 2: the aggregator forms R
- * with ρ_i = 1 even though the signers' responses used the real ρ_i.
+ * supplied nonces. The unbound-control mode consistently uses rho=1 in BOTH
+ * commitment and response; honest acceptance does not establish attack security.
  */
 export async function frostSign(
   group: FrostGroup,
   set: Signer[],
   message: string,
   nonces: Map<bigint, NoncePair>,
-  dropBinding = false,
+  bindingMode: 'rfc' | 'unbound-control' = 'rfc',
 ): Promise<SessionOutput> {
   const msg = enc(message);
   const commitments = set.map((s) => {
     const n = nonces.get(s.id)!;
     return { id: s.id, D: B.multiply(n.d).toBytes(), E: B.multiply(n.e).toBytes() };
-  });
+  }).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
   const ids = set.map((s) => s.id);
   const rhos: { id: bigint; rho: bigint }[] = [];
   for (const s of set) {
-    rhos.push({ id: s.id, rho: await bindingFactor(s.id, msg, commitments) });
+    rhos.push({ id: s.id, rho: bindingMode === 'unbound-control' ? 1n : await bindingFactor(s.id, group.publicKeyEnc, msg, commitments) });
   }
   const rhoOf = (id: bigint): bigint => rhos.find((r) => r.id === id)!.rho;
 
-  // Group commitment R = Σ (D_i + ρ_i·E_i). Attack 2 drops ρ_i here.
+  // Group commitment and responses use the SAME binding factor.
   let R = ed25519.Point.ZERO;
   for (const s of set) {
     const n = nonces.get(s.id)!;
-    const rho = dropBinding ? 1n : rhoOf(s.id);
+    const rho = rhoOf(s.id);
     R = R.add(B.multiply(n.d)).add(B.multiply(mod(rho * n.e)));
   }
   const Renc = R.toBytes();
 
   const c = mod(leToBig(await sha512(Renc, group.publicKeyEnc, msg)));
 
-  // Per-signer responses ALWAYS use the real binding factor (honest signers).
+  // Honest responses use the same transcript and challenge as the commitment.
   const shares: { id: bigint; z: bigint }[] = [];
   let z = 0n;
   for (const s of set) {
@@ -341,18 +368,20 @@ export async function runNonceReuse(reuse: boolean, threshold = 2, participants 
   };
 }
 
-// ─── Attack 2: skipping the nonce-commitment binding factor ───
+// ─── Experiment 2: binding-term consistency ───
 
 export interface BindingResult {
   boundVerified: boolean; // correct FROST aggregate → accepted
-  unboundVerified: boolean; // aggregator dropped ρ_i → rejected
+  unboundVerified: boolean; // only R replaced, original z retained → rejected
+  honestUnboundVerified: boolean; // consistent rho=1 honest control → accepted
+  boundSignatureHex: string;
+  alteredSignatureHex: string;
   message: string;
 }
 
 /**
- * Mount attack 2. Same honest signing shares (computed WITH binding), aggregated
- * two ways: correctly (ρ_i folded into R) and with the binding factor skipped
- * (ρ_i = 1). The real Ed25519 verifier accepts the first and rejects the second.
+ * Preserve the exact honest response sum z; replace ONLY the commitment R.
+ * This is an equation-consistency check, not a concurrent Drijvers/ROS attack.
  */
 export async function runBindingOmission(threshold = 2, participants = 3): Promise<BindingResult> {
   const group = keygen(threshold, participants);
@@ -360,12 +389,25 @@ export async function runBindingOmission(threshold = 2, participants = 3): Promi
   const message = 'authorize release of funds';
   const nonces = freshNonces(set);
 
-  const bound = await frostSign(group, set, message, nonces, false);
-  const unbound = await frostSign(group, set, message, nonces, true);
+  const bound = await frostSign(group, set, message, nonces);
+  let alteredR = ed25519.Point.ZERO;
+  for (const s of set) {
+    const n = nonces.get(s.id)!;
+    alteredR = alteredR.add(B.multiply(n.d)).add(B.multiply(n.e));
+  }
+  const altered = bound.signature.slice();
+  altered.set(alteredR.toBytes(), 0);
+  const unboundVerified = ed25519.verify(altered, enc(message), group.publicKeyEnc);
+  // Separate honest control: re-compute commitment, challenge and responses
+  // consistently. Acceptance alone says nothing about concurrent-attack safety.
+  const honestUnbound = await frostSign(group, set, message, freshNonces(set), 'unbound-control');
 
   return {
     boundVerified: bound.verified,
-    unboundVerified: unbound.verified,
+    unboundVerified,
+    honestUnboundVerified: honestUnbound.verified,
+    boundSignatureHex: hex(bound.signature),
+    alteredSignatureHex: hex(altered),
     message,
   };
 }
