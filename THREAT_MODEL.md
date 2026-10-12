@@ -65,3 +65,7 @@ Production systems require:
 - authenticated channels and anti-replay controls
 - audit logging and secure enclaves/HSMs
 - key lifecycle and incident response controls
+
+## Adaptive-security scope
+
+Signature-equation checks, aggregation controls and nonce-use experiments do not prove adaptive security of this browser implementation. The visible research section distinguishes static/adaptive corruption, public verifying shares, erasure assumptions and parameter-specific LDVR regimes. Its theorem notation uses signing threshold `T=t+1`; the UI’s signing threshold is `T`, even where controls label it `t`. The September 2026 papers remain preprints. All shares are visible to one page, so these roles are not isolated endpoints.

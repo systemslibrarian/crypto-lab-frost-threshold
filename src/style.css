@@ -655,7 +655,7 @@ details summary:hover {
 	top: -0.95rem;
 	left: 50%;
 	transform: translateX(-50%);
-	color: rgba(99, 102, 241, 0.4);
+	color: var(--ink);
 	font-size: 1.1rem;
 	font-weight: 700;
 }
@@ -1225,7 +1225,7 @@ html[data-theme='light'] .sp-caption strong {
 html[data-theme='light'] .hb-badge-hide {
 	color: #3730a3;
 	background: var(--brand-soft);
-	border-color: rgba(99, 102, 241, 0.4);
+	border-color: var(--ink);
 }
 
 html[data-theme='light'] .hb-badge-bind {
@@ -1800,3 +1800,10 @@ html[data-theme='light'] #app button.secondary {
 .attack-rows li > span:first-child {
 	color: var(--text-dim);
 }
+
+#adaptive-research a { color: inherit; text-decoration: underline; }
+
+/* Research context is not another executable step in the signing flow. */
+#adaptive-research::after { content: none; }
+
+html[data-theme="dark"] .exhibit + .exhibit::after { color: #cbd5e1; }

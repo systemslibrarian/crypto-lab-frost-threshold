@@ -76,3 +76,7 @@ A progress tracker, per-step "why it matters" callouts, in-step diagrams (Shamir
 Use Node24 and run `npm ci`, `cargo test --manifest-path crate/Cargo.toml`, and `npm run wasm` before TypeScript checks or the site build. The generated `pkg` module is a prerequisite; a missing module is not a failing protocol test. Tailwind4 styling requires Safari16.4+, Chrome111+ or Firefox128+.
 
 `npm run deploy` requests the existing gated `deploy.yml` workflow for remote `main`; it does not upload local files. A queued request is not proof of deployment. Confirm the workflow and public site separately. The main Rust/WASM implementation is unchanged by the exhibit and CSS repairs; this build does not establish reproducibility of a previously distributed WASM binary.
+
+## Adaptive-corruption research context
+
+The live demo now includes an **Adaptive corruption** section with dated primary sources, the `T=t+1` notation conversion, baseline and large-roster examples, and explicit proof/attack/executable-demo boundaries. A valid signature or failed single-share forgery is not an adaptive-security proof. See [the 2025 proof](https://eprint.iacr.org/2025/1061), [the September 2026 attack preprint](https://eprint.iacr.org/2026/2126), and [the contextualization preprint](https://eprint.iacr.org/2026/2203). This addition does not change the signing engine or nonce/binding controls.

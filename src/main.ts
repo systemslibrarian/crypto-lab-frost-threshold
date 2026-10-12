@@ -1,4 +1,5 @@
 import './style.css';
+import { renderAdaptiveResearch } from './exhibits/adaptive-research';
 import { renderAggregateExhibit } from './exhibits/aggregate';
 import { renderKeygenExhibit } from './exhibits/keygen';
 import { renderRound1Exhibit } from './exhibits/round1';
@@ -141,6 +142,7 @@ const render = (): void => {
       ${renderAggregateExhibit(state.value, simulateFailure, aggregateBusy, aggregateError)}
       ${renderAnySubsetExhibit(previous, latest, state.value.finalSignature !== null, state.value.groupPublicKey)}
       ${renderAttacksExhibit(nonceReuseResult, bindingResult, nonceAttackBusy, bindingAttackBusy)}
+      ${renderAdaptiveResearch()}
       ${renderRecap(state.value)}
     </main>
   `;
