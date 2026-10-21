@@ -8,6 +8,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
+import { assertNormalExit,validateNamedRun } from './mutation-report.mjs';
 import { createHash } from 'node:crypto';
 import {
   existsSync,
@@ -42,11 +43,12 @@ function run(command, args, cwd, allowFailure = false) {
     env: { ...process.env, CI: '1', FORCE_COLOR: '0' },
     maxBuffer: 64 * 1024 * 1024,
   });
+  assertNormalExit(result,command);
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   if (!allowFailure && result.status !== 0) {
     throw new Error(`${command} ${args.join(' ')} failed (${result.status})\n${output}`);
   }
-  return { status: result.status, output };
+  return { ...result, status: result.status, output };
 }
 
 const git = (...args) => run('git', ['-C', root, ...args], root).output.trim();
@@ -107,23 +109,13 @@ function owningTest(entry, expectGreen) {
       '-g',
       entry.test,
       '--retries=0',
-      '--reporter=list',
+      '--reporter=json',
     ],
     tree,
     !expectGreen,
   );
-  if (expectGreen && result.status !== 0) {
-    throw new Error(`${entry.id}: unmutated/restored owning test is red\n${result.output}`);
-  }
-  if (!expectGreen) {
-    if (result.status === 0) throw new Error(`${entry.id}: mutation SURVIVED; named test stayed green`);
-    if (!result.output.includes(entry.test)) {
-      throw new Error(`${entry.id}: suite went red without naming its owning test\n${result.output}`);
-    }
-    if (/error TS\d+|Build failed|Process from config\.webServer was not able to start/i.test(result.output)) {
-      throw new Error(`${entry.id}: red result was a build/server failure, not a mutation kill\n${result.output}`);
-    }
-  }
+  validateNamedRun(result,entry.test,expectGreen);
+
 }
 
 function replaceExactly(path, from, to) {

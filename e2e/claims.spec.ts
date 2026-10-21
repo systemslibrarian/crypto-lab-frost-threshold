@@ -216,3 +216,16 @@ test('dealer framing fixture is green and still disproves holder attribution', a
     'the dealer holds every αi and can produce a valid (J, σ) naming anyone',
   );
 });
+
+test('accountable signing follows a changed selected quorum after private signing',async({page})=>{
+  await completeFrost(page);
+  await signAccountably(page);
+  await expect(page.locator('#ats-quorum')).toHaveAttribute('data-signers','1,2,3');
+  await page.locator('.participant').nth(2).click();
+  await page.locator('.participant').nth(3).click();
+  await expect(page.locator('#ats-accountable-empty')).toBeVisible();
+  await signAccountably(page);
+  await expect(page.locator('#ats-quorum')).toHaveAttribute('data-signers','1,2,4');
+  // The private signature remains an honest record of its original quorum.
+  await expect(page.locator('#ats-private-quorum')).toHaveAttribute('data-signers','1,2,3');
+});

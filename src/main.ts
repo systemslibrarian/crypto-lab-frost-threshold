@@ -1,3 +1,4 @@
+import { accountableQuorum } from './ats/quorum';
 import './style.css';
 import { renderAdaptiveResearch } from './exhibits/adaptive-research';
 import { renderAggregateExhibit } from './exhibits/aggregate';
@@ -214,17 +215,7 @@ const retireAccountable = (reason: string, discardKeys: boolean): boolean => {
 };
 
 const currentAccountableQuorum = (): number[] => {
-  const latest = state.signatureHistory.at(-1);
-  const identifiers = latest?.participants.length === state.value.config.threshold
-    ? latest.participants
-    : state.value.selectedParticipants;
-  const mapped = identifiers
-    .map((identifier) => state.value.shares.findIndex((share) => share.identifier === identifier) + 1)
-    .filter((signer) => signer > 0);
-  if (mapped.length === state.value.config.threshold && new Set(mapped).size === mapped.length) {
-    return mapped.sort((a, b) => a - b);
-  }
-  return Array.from({ length: state.value.config.threshold }, (_, index) => index + 1);
+  return accountableQuorum(state.value.selectedParticipants,state.signatureHistory.at(-1)?.participants,state.value.shares.map(share=>share.identifier),state.value.config.threshold);
 };
 
 const runAccountableTask = async (task: () => void): Promise<void> => {

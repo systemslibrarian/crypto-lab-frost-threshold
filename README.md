@@ -99,3 +99,12 @@ Use Node24 and run `npm ci`, `cargo test --manifest-path crate/Cargo.toml`, and 
 ## Adaptive-corruption research context
 
 The live demo now includes an **Adaptive corruption** section with dated primary sources, the `T=t+1` notation conversion, baseline and large-roster examples, and explicit proof/attack/executable-demo boundaries. A valid signature or failed single-share forgery is not an adaptive-security proof. See [the 2025 proof](https://eprint.iacr.org/2025/1061), [the September 2026 attack preprint](https://eprint.iacr.org/2026/2126), and [the contextualization preprint](https://eprint.iacr.org/2026/2203). This addition does not change the signing engine or nonce/binding controls.
+
+### Accountable quorum correction
+
+Accountable signing now uses the current complete participant selection before falling
+back to the last FROST quorum. The private card continues to show the quorum that produced
+its recorded signature. Changing signers therefore retires the ATS result and the next
+ATS signature follows the new selection. The POP signature and proof domains, required
+PopVerify registration, and quicknet BASIC-suite contrast are preserved. The deployment
+gate also replays the mutation ledger with structured owning-test assertion checks.
