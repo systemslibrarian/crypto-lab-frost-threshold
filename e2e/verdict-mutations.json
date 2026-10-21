@@ -21,7 +21,7 @@
       "id": "combine-skips-share-verification",
       "file": "src/ats/bls-ats.ts",
       "find": "    return sigma === undefined || publicKey === undefined || !atsVerifyShare(publicKey, message, sigma);",
-      "replace": "    return sigma === undefined || publicKey === undefined || (false && !atsVerifyShare(publicKey, message, sigma));",
+      "replace": "    return sigma === undefined || publicKey === undefined || false;",
       "test": "combiner blames exactly the corrupted share",
       "why": "Makes C aggregate a corrupt share instead of returning blame({j})."
     },
