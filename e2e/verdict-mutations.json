@@ -1,0 +1,69 @@
+{
+  "description": "Replayable §4.1c patches for every new accountable-threshold verdict family. The runner requires an unmutated pass, a non-empty source change, a moved production bundle hash, the named test red, and a byte-identical restore with that test green. Browser mutations always use --retries=0 and CI=1.",
+  "mutations": [
+    {
+      "id": "verify-uses-all-N-keys",
+      "file": "src/ats/bls-ats.ts",
+      "find": "    aggregatePublicKey = aggregatePublicKeys(roster.publicKeys, signers);",
+      "replace": "    aggregatePublicKey = aggregatePublicKeys(roster.publicKeys, roster.publicKeys.map((_, index) => index + 1));",
+      "test": "accountable signature verifies only against keys named by J",
+      "why": "Forces V to ignore J and aggregate every registered key."
+    },
+    {
+      "id": "verify-skips-threshold-count",
+      "file": "src/ats/bls-ats.ts",
+      "find": "  if (signers.length !== threshold) {",
+      "replace": "  if (false && signers.length !== threshold) {",
+      "test": "threshold policy rejects a valid t-minus-one BLS sum",
+      "why": "Removes the |J| = t policy while leaving the pairing equation intact."
+    },
+    {
+      "id": "combine-skips-share-verification",
+      "file": "src/ats/bls-ats.ts",
+      "find": "    return sigma === undefined || publicKey === undefined || !atsVerifyShare(publicKey, message, sigma);",
+      "replace": "    return false && (sigma === undefined || publicKey === undefined || !atsVerifyShare(publicKey, message, sigma));",
+      "test": "combiner blames exactly the corrupted share",
+      "why": "Makes C aggregate a corrupt share instead of returning blame({j})."
+    },
+    {
+      "id": "trace-trusts-page-state",
+      "file": "src/ats/bls-ats.ts",
+      "find": "  return decodeBitmap(signature.bitmap, n);",
+      "replace": "  return _pageQuorum ? [..._pageQuorum] : decodeBitmap(signature.bitmap, n);",
+      "test": "tracer decodes edited J rather than page quorum",
+      "why": "Returns mutable page state instead of decoding J from the signature."
+    },
+    {
+      "id": "bitmap-decode-off-by-one",
+      "file": "src/ats/bls-ats.ts",
+      "find": "    signers.push(bit + 1);",
+      "replace": "    signers.push(bit);",
+      "test": "bitmap labels are one-based and match encoded bits",
+      "why": "Changes the signer-number convention from 1-based to 0-based."
+    },
+    {
+      "id": "verify-skips-pop",
+      "file": "src/ats/bls-ats.ts",
+      "find": "  const badProofs = rejectedProofs(roster, signers);",
+      "replace": "  const badProofs: number[] = [];",
+      "test": "proof of possession rejects rogue cancellation key",
+      "why": "Lets a rogue cancellation key reach same-message aggregate verification without PopVerify."
+    },
+    {
+      "id": "dealer-limit-text-removed",
+      "file": "src/exhibits/accountable.ts",
+      "find": "        The tracer names the keys that signed; with a trusted dealer it does not show their holders signed:\n        the dealer holds every α<sub>i</sub> and can produce a valid (J, σ) naming anyone.",
+      "replace": "        Limitation text removed by the mutation runner.",
+      "test": "dealer framing fixture is green and still disproves holder attribution",
+      "why": "Deletes the §4.1d negative claim from its evidence fixture."
+    },
+    {
+      "id": "dealer-aggregate-painted-red",
+      "file": "src/exhibits/accountable.ts",
+      "find": "  const aggregateGreen = result.verification.ok;",
+      "replace": "  const aggregateGreen = result.verification.ok && false;",
+      "test": "dealer framing fixture is green and still disproves holder attribution",
+      "why": "Breaks assertion 2 of §4.1d: every cryptographic check in the evidence fixture must be green."
+    }
+  ]
+}

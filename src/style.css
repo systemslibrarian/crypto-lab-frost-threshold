@@ -1807,3 +1807,295 @@ html[data-theme='light'] #app button.secondary {
 #adaptive-research::after { content: none; }
 
 html[data-theme="dark"] .exhibit + .exhibit::after { color: #cbd5e1; }
+
+/* --- Exhibit 7: private versus accountable threshold signatures --- */
+.ats-exhibit a {
+	color: #67e8f9;
+	text-decoration: underline;
+	text-underline-offset: 0.16em;
+}
+
+.ats-lead {
+	font-size: 1.08rem;
+	color: #cbd5e1 !important;
+}
+
+.ats-source-note,
+.ats-related {
+	font-size: 0.92rem;
+}
+
+.ats-compare {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+	margin: 1rem 0;
+}
+
+.ats-card {
+	min-width: 0;
+}
+
+.ats-card > p,
+.ats-break > p,
+.ats-dealer-panel > p,
+.ats-dealer-evidence > p {
+	color: #aab6c9;
+	line-height: 1.55;
+}
+
+.ats-break p:not([class]),
+.ats-break p:not([class]) sub {
+	color: #aab6c9;
+}
+
+.ats-facts {
+	display: grid;
+	gap: 0.55rem;
+	margin: 0.9rem 0;
+}
+
+.ats-facts > div {
+	display: grid;
+	grid-template-columns: minmax(8rem, 0.9fr) minmax(0, 1.4fr);
+	gap: 0.6rem;
+	padding-bottom: 0.45rem;
+	border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.ats-facts dt {
+	font-weight: 700;
+	color: #cbd5e1;
+}
+
+.ats-facts dd {
+	margin: 0;
+	color: #aab6c9;
+	overflow-wrap: anywhere;
+}
+
+.ats-bitmap {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+	margin: 0.6rem 0 0.9rem;
+}
+
+.ats-bit {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.35rem 0.55rem;
+	border: 1px solid var(--line-control);
+	border-radius: 999px;
+	color: #cbd5e1;
+	background: rgba(15, 23, 42, 0.45);
+}
+
+.ats-bit.is-set {
+	border-color: #818cf8;
+	background: rgba(79, 70, 229, 0.35);
+	color: #f8fafc;
+}
+
+.ats-status {
+	display: flex;
+	align-items: flex-start;
+	max-width: 100%;
+	line-height: 1.45;
+}
+
+.ats-status.error {
+	display: flex;
+}
+
+.ats-retired {
+	margin: 0.75rem 0;
+	padding: 0.55rem 0.75rem;
+	border-left: 4px solid #fbbf24;
+	background: rgba(217, 119, 6, 0.14);
+	color: #fde68a !important;
+}
+
+.ats-break-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.85rem;
+	margin: 1.1rem 0;
+}
+
+.ats-break,
+.ats-dealer-panel {
+	min-width: 0;
+	padding: 1rem;
+	border: 1px solid rgba(148, 163, 184, 0.28);
+	border-radius: 14px;
+	background: rgba(15, 23, 42, 0.38);
+}
+
+.ats-break h3,
+.ats-dealer-panel h3 {
+	margin: 0 0 0.45rem;
+	color: #dbe4f0;
+}
+
+.ats-result-list,
+.ats-frame-results {
+	padding-left: 1.25rem;
+	color: #aab6c9;
+	line-height: 1.55;
+}
+
+.ats-frame-results li + li {
+	margin-top: 0.8rem;
+}
+
+.ats-warning {
+	display: flex;
+	gap: 0.45rem;
+	padding: 0.6rem 0.75rem;
+	border: 1px solid #b45309;
+	border-radius: 10px;
+	background: rgba(180, 83, 9, 0.16);
+	color: #fde68a !important;
+	font-weight: 700;
+	line-height: 1.45;
+}
+
+.ats-table-wrap {
+	max-width: 100%;
+	margin: 1rem 0;
+}
+
+.ats-size-table {
+	width: 100%;
+	table-layout: fixed;
+	border-collapse: collapse;
+	color: #cbd5e1;
+}
+
+.ats-size-table caption {
+	padding: 0 0 0.55rem;
+	text-align: left;
+	font-weight: 700;
+	color: #e2e8f0;
+}
+
+.ats-size-table th,
+.ats-size-table td {
+	padding: 0.65rem;
+	border: 1px solid rgba(148, 163, 184, 0.32);
+	text-align: left;
+	vertical-align: top;
+	overflow-wrap: anywhere;
+}
+
+.ats-dealer-panel {
+	margin-top: 1rem;
+	border-color: #b45309;
+}
+
+.ats-dealer-evidence {
+	margin-top: 0.9rem;
+}
+
+.ats-alarm {
+	padding: 0.8rem;
+	border: 2px solid #fb7185;
+	border-radius: 10px;
+	background: rgba(190, 18, 60, 0.2);
+	color: #fecdd3 !important;
+	font-weight: 700;
+	letter-spacing: 0.015em;
+}
+
+#ats-negative-claim {
+	padding: 0.75rem;
+	border-left: 4px solid #fb7185;
+	background: rgba(190, 18, 60, 0.12);
+	color: #f1f5f9 !important;
+}
+
+html[data-theme='light'] .ats-exhibit a {
+	color: #0e7490;
+}
+
+html[data-theme='light'] .ats-lead,
+html[data-theme='light'] .ats-card > p,
+html[data-theme='light'] .ats-break > p,
+html[data-theme='light'] .ats-break p:not([class]),
+html[data-theme='light'] .ats-break p:not([class]) sub,
+html[data-theme='light'] .ats-dealer-panel > p,
+html[data-theme='light'] .ats-dealer-evidence > p,
+html[data-theme='light'] .ats-facts dd,
+html[data-theme='light'] .ats-result-list,
+html[data-theme='light'] .ats-frame-results {
+	color: var(--muted) !important;
+}
+
+html[data-theme='light'] .ats-facts dt,
+html[data-theme='light'] .ats-break h3,
+html[data-theme='light'] .ats-dealer-panel h3,
+html[data-theme='light'] .ats-size-table,
+html[data-theme='light'] .ats-size-table caption {
+	color: var(--ink);
+}
+
+html[data-theme='light'] .ats-break,
+html[data-theme='light'] .ats-dealer-panel,
+html[data-theme='light'] .ats-bit {
+	background: #fff;
+	border-color: var(--line-control-light);
+}
+
+html[data-theme='light'] .ats-bit {
+	color: var(--ink);
+}
+
+html[data-theme='light'] .ats-bit.is-set {
+	background: #e0e7ff;
+	border-color: var(--brand-dark);
+	color: #312e81;
+}
+
+html[data-theme='light'] .ats-retired,
+html[data-theme='light'] .ats-warning {
+	background: #fffbeb;
+	border-color: #92400e;
+	color: #78350f !important;
+}
+
+html[data-theme='light'] .ats-alarm {
+	background: #fff1f2;
+	border-color: #be123c;
+	color: #881337 !important;
+}
+
+html[data-theme='light'] #ats-negative-claim {
+	background: #fff1f2;
+	border-color: #be123c;
+	color: #4c0519 !important;
+}
+
+html[data-theme='light'] .ats-size-table th,
+html[data-theme='light'] .ats-size-table td {
+	border-color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+	.ats-compare,
+	.ats-break-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.ats-facts > div {
+		grid-template-columns: 1fr;
+		gap: 0.2rem;
+	}
+
+	.ats-size-table th,
+	.ats-size-table td {
+		padding: 0.45rem 0.35rem;
+		font-size: 0.78rem;
+	}
+}

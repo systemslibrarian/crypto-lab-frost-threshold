@@ -37,6 +37,9 @@ export interface FrostHistoryEntry {
   /** The group key this signature was produced under, so the comparison exhibit
    *  can never show a signature next to a key it does not verify against. */
   groupPublicKey: string;
+  /** Exact message bytes signed, retained so later comparison panels cannot
+   * pair an old signature with a newly edited message input. */
+  message: string;
 }
 
 const makeInitial = (): FrostSession => ({
@@ -214,7 +217,8 @@ export class FrostStateManager {
         participants: [...this.session.selectedParticipants],
         signature,
         verified,
-        groupPublicKey: this.session.groupPublicKey
+        groupPublicKey: this.session.groupPublicKey,
+        message: this.session.message
       });
       if (this.signatureHistory.length > 2) {
         this.signatureHistory = this.signatureHistory.slice(-2);

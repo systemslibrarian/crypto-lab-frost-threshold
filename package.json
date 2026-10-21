@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run && node --test tests/publish-request.test.mjs",
     "test:a11y": "playwright test",
+    "test:mutations": "node scripts/run-mutations.mjs",
     "wasm": "PATH=$HOME/.cargo/bin:$PATH wasm-pack build crate --target web --out-dir ../pkg",
     "verify:a11y": "vite preview --port 4400 --strictPort & VP=$!; for i in $(seq 1 20); do curl -sf http://localhost:4400/crypto-lab-frost-threshold/ >/dev/null && break; sleep 1; done; BASE_URL=http://localhost:4400/crypto-lab-frost-threshold/ node scripts/a11y-check.mjs; R=$?; kill $VP; exit $R"
   },

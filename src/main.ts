@@ -9,6 +9,20 @@ import { renderProgress } from './exhibits/progress';
 import { renderRecap } from './exhibits/recap';
 import { renderAttacksExhibit } from './exhibits/attacks-view';
 import {
+  renderAccountableExhibit,
+  type AccountablePanelState,
+} from './exhibits/accountable';
+import { atsKeygen, type AtsKeySet } from './ats/bls-ats';
+import {
+  corruptOneShare,
+  editAccountableBitmap,
+  frameAbsentSigner,
+  runAccountable,
+  runDealerFrameFixture,
+  runRogueKeyFixture,
+  runThresholdGuard,
+} from './ats/demo';
+import {
   runNonceReuse,
   runBindingOmission,
   type NonceReuseResult,
@@ -68,6 +82,22 @@ let nonceReuseResult: NonceReuseResult | null = null;
 let bindingResult: BindingResult | null = null;
 let nonceAttackBusy = false;
 let bindingAttackBusy = false;
+
+const emptyAccountablePanel = (retiredReason: string | null = null): AccountablePanelState => ({
+  run: null,
+  bitmapEdit: null,
+  thresholdGuard: null,
+  corruptedShare: null,
+  framing: null,
+  rogueKey: null,
+  dealerFrame: null,
+  busy: false,
+  error: null,
+  retiredReason,
+});
+
+let accountablePanel = emptyAccountablePanel();
+let accountableKeys: AtsKeySet | null = null;
 
 let keygenError: string | null = null;
 let round1Error: string | null = null;
@@ -141,6 +171,7 @@ const render = (): void => {
       ${renderRound2Exhibit(state.value, round2Busy, round2Error)}
       ${renderAggregateExhibit(state.value, simulateFailure, aggregateBusy, aggregateError)}
       ${renderAnySubsetExhibit(previous, latest, state.value.finalSignature !== null, state.value.groupPublicKey)}
+      ${renderAccountableExhibit(state.value, latest, accountablePanel)}
       ${renderAttacksExhibit(nonceReuseResult, bindingResult, nonceAttackBusy, bindingAttackBusy)}
       ${renderAdaptiveResearch()}
       ${renderRecap(state.value)}
@@ -164,6 +195,53 @@ const render = (): void => {
   }
 };
 
+const accountableHasEvidence = (): boolean =>
+  accountablePanel.run !== null ||
+  accountablePanel.bitmapEdit !== null ||
+  accountablePanel.thresholdGuard !== null ||
+  accountablePanel.corruptedShare !== null ||
+  accountablePanel.framing !== null ||
+  accountablePanel.rogueKey !== null ||
+  accountablePanel.dealerFrame !== null;
+
+/** Retire computed ATS evidence without touching the FROST session. */
+const retireAccountable = (reason: string, discardKeys: boolean): boolean => {
+  const hadEvidence = accountableHasEvidence();
+  if (discardKeys) accountableKeys = null;
+  if (!hadEvidence) return false;
+  accountablePanel = emptyAccountablePanel(reason);
+  return true;
+};
+
+const currentAccountableQuorum = (): number[] => {
+  const latest = state.signatureHistory.at(-1);
+  const identifiers = latest?.participants.length === state.value.config.threshold
+    ? latest.participants
+    : state.value.selectedParticipants;
+  const mapped = identifiers
+    .map((identifier) => state.value.shares.findIndex((share) => share.identifier === identifier) + 1)
+    .filter((signer) => signer > 0);
+  if (mapped.length === state.value.config.threshold && new Set(mapped).size === mapped.length) {
+    return mapped.sort((a, b) => a - b);
+  }
+  return Array.from({ length: state.value.config.threshold }, (_, index) => index + 1);
+};
+
+const runAccountableTask = async (task: () => void): Promise<void> => {
+  accountablePanel.busy = true;
+  accountablePanel.error = null;
+  render();
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  try {
+    task();
+  } catch (error) {
+    accountablePanel.error = error instanceof Error ? error.message : String(error);
+  } finally {
+    accountablePanel.busy = false;
+    render();
+  }
+};
+
 const bindEvents = (): void => {
   const nSlider = document.querySelector<HTMLInputElement>('#n-slider');
   const tSlider = document.querySelector<HTMLInputElement>('#t-slider');
@@ -175,17 +253,21 @@ const bindEvents = (): void => {
       const n = Number.parseInt(nSlider.value, 10);
       const currentT = state.value.config.threshold;
       const t = Math.min(currentT, n);
+      const changed = n !== state.value.config.numParticipants || t !== currentT;
       state.setConfig(n, t);
       nValue.textContent = String(n);
       tValue.textContent = String(t);
       tSlider.max = String(n);
       tSlider.value = String(t);
+      if (changed && retireAccountable('participant configuration changed', true)) render();
     });
 
     tSlider.addEventListener('input', () => {
       const t = Number.parseInt(tSlider.value, 10);
+      const changed = t !== state.value.config.threshold;
       state.setConfig(state.value.config.numParticipants, t);
       tValue.textContent = String(t);
+      if (changed && retireAccountable('threshold changed', true)) render();
     });
 
     // On release (not every drag tick), if keys were already generated they no longer
@@ -212,6 +294,7 @@ const bindEvents = (): void => {
     try {
       const out = (await wasmKeygen(state.value.config.threshold, state.value.config.numParticipants)) as KeygenResult;
       state.setKeygenResult(out.group_public_key, toParticipantShares(out.shares));
+      retireAccountable('FROST keys regenerated', true);
     } catch (error) {
       keygenError = error instanceof Error ? error.message : String(error);
     } finally {
@@ -233,8 +316,12 @@ const bindEvents = (): void => {
 
   document.querySelectorAll<HTMLButtonElement>('[data-participant-id]').forEach((btn) => {
     btn.addEventListener('click', () => {
+      const before = state.value.selectedParticipants.join(',');
       try {
         state.toggleParticipant(btn.dataset.participantId ?? '');
+        if (state.value.selectedParticipants.join(',') !== before) {
+          retireAccountable('signer quorum changed', false);
+        }
         round1Error = null;
         round2Error = null;
         aggregateError = null;
@@ -253,8 +340,10 @@ const bindEvents = (): void => {
 
   const messageInput = document.querySelector<HTMLInputElement>('#message-input');
   messageInput?.addEventListener('input', () => {
+    const changed = messageInput.value !== messageText;
     messageText = messageInput.value;
     state.setMessageFromText(messageText);
+    const retiredAccountable = changed && retireAccountable('message changed', false);
 
     // If signing already started, the message change invalidates it: the Round 1
     // nonces are bound to one signing attempt, so they must be regenerated for the
@@ -267,6 +356,11 @@ const bindEvents = (): void => {
       round1Error = null;
       round2Error = null;
       aggregateError = null;
+      render();
+      return;
+    }
+
+    if (retiredAccountable) {
       render();
       return;
     }
@@ -450,9 +544,65 @@ const bindEvents = (): void => {
     }
   });
 
+  document.querySelector<HTMLButtonElement>('#ats-sign')?.addEventListener('click', () => {
+    void runAccountableTask(() => {
+      const { numParticipants: n, threshold } = state.value.config;
+      if (!accountableKeys || accountableKeys.n !== n || accountableKeys.threshold !== threshold) {
+        accountableKeys = atsKeygen(n, threshold);
+      }
+      const run = runAccountable(
+        accountableKeys,
+        new TextEncoder().encode(messageText),
+        currentAccountableQuorum(),
+      );
+      accountablePanel = { ...emptyAccountablePanel(), run, busy: true };
+    });
+  });
+
+  document.querySelector<HTMLButtonElement>('#ats-edit-bitmap')?.addEventListener('click', () => {
+    void runAccountableTask(() => {
+      if (!accountablePanel.run) throw new Error('make an accountable signature first');
+      accountablePanel.bitmapEdit = editAccountableBitmap(accountablePanel.run);
+    });
+  });
+
+  document.querySelector<HTMLButtonElement>('#ats-threshold-guard')?.addEventListener('click', () => {
+    void runAccountableTask(() => {
+      if (!accountablePanel.run) throw new Error('make an accountable signature first');
+      accountablePanel.thresholdGuard = runThresholdGuard(accountablePanel.run);
+    });
+  });
+
+  document.querySelector<HTMLButtonElement>('#ats-frame')?.addEventListener('click', () => {
+    void runAccountableTask(() => {
+      if (!accountablePanel.run) throw new Error('make an accountable signature first');
+      accountablePanel.framing = frameAbsentSigner(accountablePanel.run);
+    });
+  });
+
+  document.querySelector<HTMLButtonElement>('#ats-corrupt-share')?.addEventListener('click', () => {
+    void runAccountableTask(() => {
+      if (!accountablePanel.run) throw new Error('make an accountable signature first');
+      accountablePanel.corruptedShare = corruptOneShare(accountablePanel.run);
+    });
+  });
+
+  document.querySelector<HTMLButtonElement>('#ats-rogue-key')?.addEventListener('click', () => {
+    void runAccountableTask(() => {
+      accountablePanel.rogueKey = runRogueKeyFixture(new TextEncoder().encode(messageText));
+    });
+  });
+
+  document.querySelector<HTMLButtonElement>('#ats-dealer-frame')?.addEventListener('click', () => {
+    void runAccountableTask(() => {
+      accountablePanel.dealerFrame = runDealerFrameFixture(new TextEncoder().encode(messageText));
+    });
+  });
+
   const retry = document.querySelector<HTMLButtonElement>('#retry-subset');
   retry?.addEventListener('click', () => {
     state.resetSigningButKeepKeys();
+    retireAccountable('signer quorum reset', false);
     round1Error = null;
     round2Error = null;
     aggregateError = null;

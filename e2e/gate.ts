@@ -397,6 +397,33 @@ async function toggleDetails(details: Locator): Promise<void> {
   await details.locator('> summary').click();
 }
 
+/** Reach every Exhibit 7 result through its real controls, then scan it. */
+export async function driveAccountableStates(page: Page, label: string): Promise<void> {
+  if (await page.locator('#ats-signature').count() === 0) {
+    await page.locator('#ats-sign').click();
+    await expect(page.locator('[data-claim="ats-aggregate"]')).toHaveAttribute('data-result', 'pass', {
+      timeout: 20_000,
+    });
+  }
+
+  await page.locator('#ats-edit-bitmap').click();
+  await expect(page.locator('[data-claim="bitmap-edit"]')).toHaveAttribute('data-result', 'pass');
+  await page.locator('#ats-threshold-guard').click();
+  await expect(page.locator('[data-claim="threshold-count"]')).toHaveAttribute('data-result', 'pass');
+  await page.locator('#ats-frame').click();
+  await expect(page.locator('[data-claim="framing-reused-share"]')).toHaveAttribute('data-result', 'pass');
+  await page.locator('#ats-corrupt-share').click();
+  await expect(page.locator('[data-claim="share-blame"]')).toHaveAttribute('data-result', 'pass');
+  await page.locator('#ats-rogue-key').click();
+  await expect(page.locator('[data-claim="rogue-key-pop"]')).toHaveAttribute('data-result', 'pass');
+  await page.locator('#ats-dealer-frame').click();
+  await expect(page.locator('[data-claim="dealer-frame-verdict"]')).toBeVisible();
+  await toggleDetails(page.locator('.ats-input-details'));
+  await expect(page.locator('.ats-input-details')).toHaveAttribute('open', '');
+
+  await scan(page, `${label} / accountable panel — all computed states`);
+}
+
 /**
  * Drive the lab through every state that renders content, scanning each.
  *
@@ -539,6 +566,9 @@ export async function driveAllStates(page: Page, theme: string): Promise<void> {
   await page.locator('#run-aggregate').click();
   await expect(page.locator('.subset-compare')).toBeVisible({ timeout: 20_000 });
   await s('two subsets compared against one invariant key');
+
+  // --- Exhibit 7: accountable threshold comparison and every break control --
+  await driveAccountableStates(page, theme);
 
   // --- Attack exhibits: both branches of the nonce fork, plus binding ---------
   await page.locator('#attack-nonce-reuse').click();

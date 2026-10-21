@@ -1,5 +1,12 @@
 import { test } from '@playwright/test';
-import { boot, driveAllStates, expectBaselineNotStale, NARROW, reportCollected } from './gate';
+import {
+  boot,
+  driveAccountableStates,
+  driveAllStates,
+  expectBaselineNotStale,
+  NARROW,
+  reportCollected,
+} from './gate';
 
 /**
  * WCAG A/AA gate.
@@ -46,6 +53,13 @@ test.describe('WCAG A/AA gate', () => {
     await boot(page, 'dark');
     await driveAllStates(page, 'dark @380');
     expectBaselineNotStale();
+  });
+
+  test('new accountable panel, 320px reflow width', async ({ page }) => {
+    test.slow();
+    await page.setViewportSize({ width: 320, height: 800 });
+    await boot(page, 'dark');
+    await driveAccountableStates(page, 'dark @320');
   });
 
 });
