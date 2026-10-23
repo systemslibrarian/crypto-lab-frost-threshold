@@ -98,7 +98,7 @@ Use Node24 and run `npm ci`, `cargo test --manifest-path crate/Cargo.toml`, and 
 
 ## Adaptive-corruption research context
 
-The live demo now includes an **Adaptive corruption** section with dated primary sources, the `T=t+1` notation conversion, baseline and large-roster examples, and explicit proof/attack/executable-demo boundaries. A valid signature or failed single-share forgery is not an adaptive-security proof. See [the 2025 proof](https://eprint.iacr.org/2025/1061), [the September 2026 attack preprint](https://eprint.iacr.org/2026/2126), and [the contextualization preprint](https://eprint.iacr.org/2026/2203). This addition does not change the signing engine or nonce/binding controls.
+The live demo includes an **Adaptive corruption** section with dated primary sources, the `T=t+1` notation conversion, baseline and large-roster examples, and explicit proof/attack/executable-demo boundaries. A valid signature or failed single-share forgery is not an adaptive-security proof. See [the 2025 proof](https://eprint.iacr.org/2025/1061), [the September 2026 attack preprint](https://eprint.iacr.org/2026/2126), [the contextualization preprint](https://eprint.iacr.org/2026/2203), and [Bacho's October 2026 follow-up](https://eprint.iacr.org/2026/2554) (approved 20 October; preprint). The follow-up reports a concrete LDVR attack with 488 signers and 173 corruptions for canonical Curve25519 evaluation points. Separately, it measures a successful subset search with 228 signers and 114 corruptions when evaluation points are adversarially chosen. The latter measurement is not an end-to-end compromise of this browser demo. This addition does not change the signing engine or nonce/binding controls.
 
 ### Accountable quorum correction
 
