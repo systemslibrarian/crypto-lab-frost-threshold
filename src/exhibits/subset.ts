@@ -11,7 +11,7 @@ export const renderSubsetExhibit = (session: FrostSession): string => {
           class="participant ${selected ? 'selected' : 'dimmed'}"
           data-participant-id="${share.identifier}"
           aria-pressed="${selected}"
-          aria-label="Signer ${idx + 1} — ${selected ? 'selected' : 'not selected'}"
+          aria-label="Signer ${idx + 1} ${ellipsisSafe(share.identifier)} — ${selected ? 'Selected' : 'Not selected'}"
           ${session.shares.length === 0 ? 'disabled' : ''}
         >
           <span>Signer ${idx + 1}</span>
