@@ -158,8 +158,8 @@ const render = (): void => {
         <aside class="cl-hero-why" aria-label="Why it matters">
           <span class="cl-hero-why-label">WHY IT MATTERS</span>
           <p class="cl-hero-why-text">
-            No single person ever holds the whole key, so one compromised or coerced
-            signer cannot forge a signature or lose the funds. The output is an ordinary
+            In FROST signing no single person ever holds the whole key, so one
+            compromised or coerced signer cannot forge a signature or lose the funds. The output is an ordinary
             signature verifiers already accept — no special multisig support needed.
           </p>
         </aside>
