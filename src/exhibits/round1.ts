@@ -68,7 +68,7 @@ export const renderRound1Exhibit = (
               <em>binding factor</em> derived from <em>who is signing</em> + <em>the message</em> +
               <em>all commitments</em>. Swap or reorder someone's commitment and the factor changes,
               so their share no longer fits — the forgery is rejected. This is what closes the
-              <strong>Drijvers attack</strong> on naive one-round multisignatures.
+              <strong>Drijvers attack</strong> on naive two-round multisignatures.
             </p>
           </article>
         </div>

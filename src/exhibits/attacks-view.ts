@@ -78,7 +78,7 @@ export const renderAttacksExhibit = (
         of a 3×3 linear system; summed over the signing set that is the whole group key. Then a forged
         message is signed with it and handed to the real verifier.
       </p>
-      ${insight('FROST commits <em>two</em> nonces per signer specifically to make single-reuse harder; reuse the pair across sessions and the guarantee is gone. RFC 9591 §6.1 forbids reusing nonces.')}
+      ${insight('FROST commits <em>two</em> nonces per signer specifically to make single-reuse harder; reuse the pair across sessions and the guarantee is gone. RFC 9591 §5.1 forbids reusing nonces across invocations of <span class="mono">sign</span>; §7.3, &ldquo;Nonce Reuse Attacks&rdquo;, is where the key-recovery attack is described.')}
       <div class="attack-actions">
         <button id="attack-nonce-reuse" ${nonceBusy ? 'disabled' : ''}>Reuse nonces &rarr; recover key &rarr; forge</button>
         <button id="attack-nonce-control" class="secondary" ${nonceBusy ? 'disabled' : ''}>Control: fresh nonces (safe)</button>
