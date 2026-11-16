@@ -33,9 +33,56 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install wasm-pack
-        # Replaces the stale jetli/wasm-pack-action (Node 20, no newer release)
-        # with the official prebuilt-binary installer.
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        # Pinned prebuilt binary, downloaded to a FILE and checksum-verified
+        # before anything is extracted or executed. Keeps this lab's choice of
+        # the official prebuilt binary over jetli/wasm-pack-action (stale,
+        # Node 20, no newer release) -- it only stops trusting a mutable URL.
+        #
+        # THE OLD STEP REPORTED SUCCESS WHEN IT FAILED. It was
+        # `curl … init.sh -sSf | sh`, and GitHub runs `run:` under `bash -e`
+        # with no `pipefail`, so the pipeline's status was `sh`'s: a failed
+        # download left `sh` reading empty stdin and exiting 0, the step went
+        # green with nothing installed, and the build then died downstream at
+        # `npm run wasm` with `command not found` -- an error that points at
+        # the artefact instead of the installer. Verified locally:
+        # `bash -e -c 'curl -sSf <404> | sh'` exits 0.
+        #
+        # It also pinned nothing. The hosted init.sh hardcodes v0.13.1, so the
+        # version came from rustwasm's web server rather than from this repo,
+        # and v0.13.1 is OLDER than the version its siblings were moved to --
+        # ablation-wire v0.15.0 and silent-tally v0.15.1 -- both pinned to get
+        # a bundled wasm-opt that can parse the externref table that
+        # reference-types support emits ("Only 1 table definition allowed in
+        # MVP"). This crate builds wasm32-unknown-unknown with wasm-bindgen
+        # 0.2, so it was one `cargo update` from that failure.
+        #
+        # v0.15.1 matches crypto-lab-silent-tally, read from its
+        # .github/workflows/deploy.yml line 68 and test.yml line 47.
+        # SHA-256 computed 2026-11-16 from the official release asset
+        # https://github.com/rustwasm/wasm-pack/releases/download/v0.15.1/wasm-pack-v0.15.1-x86_64-unknown-linux-musl.tar.gz
+        # (2886204 bytes). $HOME/.cargo/bin is where `npm run wasm` looks:
+        # its script is `PATH=$HOME/.cargo/bin:$PATH wasm-pack build crate …`.
+        run: |
+          set -euo pipefail
+          version=0.15.1
+          asset="wasm-pack-v${version}-x86_64-unknown-linux-musl"
+          sha256=410101009739b9d01c7d5affaaad6e9c9a24b4cba6791a4805db8e89b9bf7af2
+          curl --fail --location --silent --show-error \
+            -o "${asset}.tar.gz" \
+            "https://github.com/rustwasm/wasm-pack/releases/download/v${version}/${asset}.tar.gz"
+          echo "${sha256}  ${asset}.tar.gz" | sha256sum -c -
+          tar -xzf "${asset}.tar.gz"
+          mkdir -p "$HOME/.cargo/bin"
+          install -m 0755 "${asset}/wasm-pack" "$HOME/.cargo/bin/wasm-pack"
+          rm -rf "${asset}" "${asset}.tar.gz"
+          # The step fails unless the installed binary reports exactly this
+          # version, so a wrong or missing binary cannot pass silently.
+          actual="$("$HOME/.cargo/bin/wasm-pack" --version)"
+          echo "wasm-pack --version: ${actual}"
+          if [ "${actual}" != "wasm-pack ${version}" ]; then
+            echo "::error::expected 'wasm-pack ${version}', got '${actual}'"
+            exit 1
+          fi
 
       - name: Install deps
         run: npm ci
