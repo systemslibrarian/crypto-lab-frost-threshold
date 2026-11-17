@@ -8,5 +8,5 @@ export default defineConfig({
   // scripts/a11y-check.mjs, which only connects to a URL and never starts a
   // server. Callers that pin their own port (playwright.config.ts on 4640, the
   // verify:a11y script on 4400) pass --port explicitly and still override this.
-  preview: { port: 4717, strictPort: true }
+  preview: { port: 4640, strictPort: true }
 });
