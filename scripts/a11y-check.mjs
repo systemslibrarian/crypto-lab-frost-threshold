@@ -4,10 +4,87 @@
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+/* Own the server this suite tests.
+ *
+ * This file used to point at a fixed localhost port and assume a preview was
+ * already serving it, without checking whose server answered. A port held by
+ * another project -- or by a sibling lab previewed on the same workstation --
+ * answers the goto, and every assertion after it describes someone else's
+ * page. Port 4640 is this lab's own in the fleet registry
+ * (crypto-lab/tools/playwright-ports.json); it was 4717, which the registry assigns to
+ * crypto-lab-pulse-chain.
+ * --strictPort refuses to move, so a collision now fails loudly here instead
+ * of testing the wrong app quietly.
+ *
+ * Set BASE_URL to point this at an already-running server; CI does.
+ */
+const OWN_PORT = 4640;
+const BASE = process.env.BASE_URL ?? `http://localhost:${OWN_PORT}/crypto-lab-frost-threshold/`;
+let ownServer = null;
+
+async function reachable(u) {
+  try {
+    return (await fetch(u, { redirect: 'follow' })).ok;
+  } catch {
+    return false;
+  }
+}
+
+async function startOwnServer() {
+  if (!existsSync(join(REPO_ROOT, 'dist', 'index.html'))) {
+    const built = spawnSync('npm', ['run', 'build'], { cwd: REPO_ROOT, encoding: 'utf8' });
+    if (built.status !== 0) {
+      console.error('FAIL: could not build before starting the preview server');
+      console.error((built.stdout ?? '') + (built.stderr ?? ''));
+      process.exit(1);
+    }
+  }
+  const child = spawn('npm', ['run', 'preview', '--', '--port', String(OWN_PORT), '--strictPort'], {
+    cwd: REPO_ROOT,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let log = '';
+  child.stdout.on('data', (d) => (log += d));
+  child.stderr.on('data', (d) => (log += d));
+  for (let i = 0; i < 60; i++) {
+    if (await reachable(BASE)) return child;
+    if (child.exitCode !== null) break;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  console.error(`FAIL: preview did not come up on port ${OWN_PORT} within 30s.`);
+  console.error('      --strictPort does not move, so this is a port collision or a build fault:');
+  console.error(log.trim() || '      (the server printed nothing)');
+  try {
+    if (child.exitCode === null) process.kill(child.pid);
+  } catch {
+    /* already gone */
+  }
+  process.exit(1);
+}
+
+/* By pid, and only the child this process started -- never by pattern. */
+function stopOwnServer() {
+  if (ownServer?.exitCode === null) {
+    try {
+      process.kill(ownServer.pid);
+    } catch {
+    /* already gone */
+  }
+  }
+}
+
+if (!process.env.BASE_URL) ownServer = await startOwnServer();
+
 
 const require = createRequire(import.meta.url);
 const axeSource = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
-const BASE = process.env.BASE_URL ?? 'http://localhost:4717/crypto-lab-frost-threshold/';
 
 const runAxe = async (page, label) => {
   await page.evaluate(axeSource);
@@ -135,6 +212,8 @@ let failed = 0;
   await page.screenshot({ path: 'scripts/shot-mobile.png', fullPage: true });
   await page.close();
 }
+
+stopOwnServer();
 
 await browser.close();
 console.log(`\n==== ${failed === 0 ? 'PASS ✓' : 'ISSUES: ' + failed} ====`);
